@@ -1,0 +1,267 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "icp_quant_agent — DEX state sensing + arbitrage signal prototype UI",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Create a minimal app shell with a distinctive, consistent visual theme and English-only UI text.",
+      "acceptanceCriteria": [
+        "App renders a clean dashboard layout with consistent styling across header/navigation/content areas",
+        "All visible UI text is English",
+        "Theme does not default to a generic blue/purple palette unless explicitly chosen as part of the defined theme"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "create",
+          "description": "Create the root app shell with a dashboard layout (header + left navigation + main content). Wire required screens (Market Watch, Configuration, Agent, Execution, Self-improvement) into navigation/routing and ensure all user-facing text is English."
+        },
+        {
+          "path": "frontend/src/index.css",
+          "operation": "create",
+          "description": "Add the app’s global Tailwind entry CSS under frontend/src to match the existing import in frontend/src/main.tsx, and set a distinctive theme by defining non-generic CSS variables (background/foreground/primary/accent, etc.) consistently used across screens."
+        },
+        {
+          "path": "frontend/index.css",
+          "operation": "modify",
+          "description": "Align existing Tailwind base layer variables with the chosen distinctive theme (avoid generic blue/purple defaults) and ensure global typography/layout defaults are consistent across all screens."
+        },
+        {
+          "path": "frontend/src/main.tsx",
+          "operation": "modify",
+          "description": "Verify global CSS import resolves correctly (frontend/src/index.css) and ensure App is mounted as the single shell entry for all screens."
+        },
+        {
+          "path": "frontend/src/components/AppLayout.tsx",
+          "operation": "create",
+          "description": "Create a reusable layout component for consistent header/nav/content structure across all screens. Use shadcn-ui primitives for layout elements (e.g., Card, Button) to keep visual consistency. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/SideNav.tsx",
+          "operation": "create",
+          "description": "Create a left navigation component to access Configuration, Market Watch, Agent, Execution, and Self-improvement modules without adding unrelated routes/pages. Use shadcn-ui components for navigation styling (e.g., Button, Badge). Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add a configuration UI for ICPSwap/KongSwap settings (canister IDs, pairs/pools), with validation and persistence via backend calls.",
+      "acceptanceCriteria": [
+        "User can add/edit/remove DEX endpoints/settings from the UI",
+        "Settings are stored in the Motoko backend and are restored after refresh",
+        "Validation prevents saving empty/invalid canister ID strings"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Update/extend frontend backend type definitions as needed to support configuration persistence flows used by the UI (e.g., optional config update/remove capabilities), ensuring the UI can call backend capabilities in a typed way."
+        },
+        {
+          "path": "frontend/src/lib/backendClient.ts",
+          "operation": "create",
+          "description": "Create a typed frontend backend client wrapper (actor getter + convenience functions) for configuration reads/writes (e.g., getSortedDEXConfigs, addDEXConfig, updateTradingPairs, setDEXConfigStatus)."
+        },
+        {
+          "path": "frontend/src/hooks/useDexConfigs.ts",
+          "operation": "create",
+          "description": "Implement a React Query hook to load and mutate DEX configs, including optimistic UI handling and refresh after mutations."
+        },
+        {
+          "path": "frontend/src/pages/ConfigurationPage.tsx",
+          "operation": "create",
+          "description": "Build the Configuration UI to manage per-DEX canister IDs and trading pairs/pool identifiers, including add/edit/remove flows. Use shadcn-ui form and feedback components (Input, Button, Card, Alert/Dialog) for consistent UX. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/lib/validation.ts",
+          "operation": "create",
+          "description": "Add shared validation helpers (e.g., non-empty canister ID string validation, basic format checks) used by Configuration and other forms to prevent saving invalid settings."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Configuration screen into the app shell navigation/routing so it is reachable from the dashboard layout."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Build a Market Watch dashboard showing latest ICPSwap/KongSwap snapshots side-by-side per configured pair/pool, with manual refresh and safe auto-refresh polling.",
+      "acceptanceCriteria": [
+        "User can see both DEX snapshots for the same configured pair/pool on one screen",
+        "Manual refresh triggers a new backend fetch and updates the UI",
+        "Auto-refresh can be enabled/disabled and does not freeze the UI",
+        "Errors are shown inline per DEX/pool row"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Extend frontend backend type definitions to include any required snapshot retrieval backend capabilities (read-only) needed for Market Watch to render normalized snapshots and per-row errors."
+        },
+        {
+          "path": "frontend/src/hooks/useMarketSnapshots.ts",
+          "operation": "create",
+          "description": "Create a hook that loads the latest normalized snapshots per configured pair/pool and supports manual refetch plus polling with a safe interval and cancellation when disabled."
+        },
+        {
+          "path": "frontend/src/components/AutoRefreshControl.tsx",
+          "operation": "create",
+          "description": "Add an auto-refresh toggle + interval display/control with safe defaults to prevent UI freeze. Use shadcn-ui controls (Switch, Button, Tooltip/Popover if available). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/MarketWatchPage.tsx",
+          "operation": "create",
+          "description": "Implement the Market Watch dashboard to render ICPSwap and KongSwap snapshots side-by-side per configured pair/pool with last updated time, price, and reserves/liquidity when available; include inline per-row error presentation. Use shadcn-ui Table/Card/Badge/Alert for readable status display. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/SnapshotRow.tsx",
+          "operation": "create",
+          "description": "Create a reusable row/component for displaying one pair/pool’s two-DEX snapshots, showing loading states and inline errors per DEX without breaking the whole table. Use shadcn-ui Badge/Alert/Skeleton (if present). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Market Watch screen into the app shell navigation/routing so it is reachable from the dashboard layout."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Implement cross-DEX spread/arbitrage signal analysis UI: configurable costs (fees/slippage/min profit) and deterministic signal output with reduced-confidence messaging when liquidity data is missing.",
+      "acceptanceCriteria": [
+        "User can configure analysis parameters: fee rates per DEX (or combined), slippage tolerance/assumption, and minimum profit threshold",
+        "For each pair/pool, UI displays spread %, estimated net profit after costs, and a signal status",
+        "Signal computation is deterministic given the same inputs and snapshots",
+        "When required liquidity/reserve data is unavailable, UI clearly indicates reduced-confidence estimation rather than silently producing numbers"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Extend backend type definitions to support reading/writing analysis parameters (fee/slippage/min threshold) and/or requesting analysis results that include reasoning inputs needed by the UI."
+        },
+        {
+          "path": "frontend/src/lib/analysis.ts",
+          "operation": "create",
+          "description": "Implement deterministic, pure utility functions for spread (%) and net profit estimation given snapshots + user-configured parameters, including a reduced-confidence mode when reserves/liquidity inputs are missing."
+        },
+        {
+          "path": "frontend/src/components/AnalysisConfigForm.tsx",
+          "operation": "create",
+          "description": "Create a form for configuring analysis parameters (fees, slippage assumption, minimum profit threshold). Use shadcn-ui form controls (Input, Select if needed, Button, Card) with validation feedback. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/SignalBadge.tsx",
+          "operation": "create",
+          "description": "Create a small status component that renders No Signal / Watch / Actionable with consistent styling, and shows reasoning inputs used (spread, fees, slippage, net estimate) in an accessible detail view (popover/dialog). Use shadcn-ui Badge/Popover/Dialog. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/MarketWatchPage.tsx",
+          "operation": "modify",
+          "description": "Integrate analysis configuration and computed signal output into each pair/pool row, showing spread %, net estimate, and a clear reduced-confidence indicator when reserves/liquidity fields are absent."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add an Agent control panel with Start/Stop decision loop controls and a backend-stored decision history viewer (dry-run only).",
+      "acceptanceCriteria": [
+        "User can start and stop the agent loop from the UI",
+        "Agent loop produces decision events at the chosen interval and stores them in backend history",
+        "Decision history is viewable in the UI with timestamp, inputs (spread/costs), and resulting status",
+        "Default mode is dry-run (no swaps submitted)"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAgent.ts",
+          "operation": "create",
+          "description": "Create hooks for agent controls (startAgent/stopAgent) and for loading decision history (getDecisionHistory), including loading/error states and periodic refresh when the agent is running."
+        },
+        {
+          "path": "frontend/src/pages/AgentPage.tsx",
+          "operation": "create",
+          "description": "Build the Agent control panel UI with Start/Stop toggles, interval configuration UI (frontend-side control unless backend supports), and a decision history log table showing timestamp, step, result, and details. Use shadcn-ui components (Button, Switch, Table, Card, Alert). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/DecisionHistoryTable.tsx",
+          "operation": "create",
+          "description": "Create a reusable decision history table component with clear empty/loading/error states and a detail view for the decision 'details' field. Use shadcn-ui Table/Dialog. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Agent screen into the app shell navigation/routing so it is reachable from the dashboard layout."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Provide an Execution mode scaffold (disabled by default) requiring explicit user acknowledgement; show blocked state and required integration details when not implemented.",
+      "acceptanceCriteria": [
+        "Execution controls are disabled by default and require an explicit acknowledgement step to enable",
+        "If execution is not implemented, the UI shows a blocked state and a list of required integration details rather than failing silently",
+        "No trade submission occurs without explicit enablement"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/ExecutionPage.tsx",
+          "operation": "create",
+          "description": "Create an Execution scaffold page with an explicit acknowledgement step (e.g., checkbox + confirm) that enables the execution controls UI. Until execution is implemented, render a blocked state and a clear list of required DEX integration details (swap function signatures and required arguments) instead of attempting any trade submission. Use shadcn-ui Alert/Dialog/Button/Checkbox components. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/ExecutionBlockedPanel.tsx",
+          "operation": "create",
+          "description": "Add a dedicated blocked-state panel listing missing integration details and emphasizing that execution is disabled by default (dry-run). Use shadcn-ui Alert/Card components. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Execution screen into the app shell navigation/routing so it is reachable from the dashboard layout."
+        }
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "summary": "Add Self-improvement scaffolding: strategy version storage UI and simple backtesting over recorded decision history with summary metrics.",
+      "acceptanceCriteria": [
+        "User can save named strategy parameter sets with versioning in the backend",
+        "UI can run an evaluation over stored decision history using a selected strategy set and display summary metrics (counts by signal status at minimum)",
+        "No external services are used for learning; all logic is local to the app"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Extend backend type definitions to support strategy set storage/versioning and retrieval needed by the Self-improvement UI."
+        },
+        {
+          "path": "frontend/src/lib/backtest.ts",
+          "operation": "create",
+          "description": "Implement local backtesting utilities that evaluate stored decision history using a selected strategy parameter set and compute summary metrics (at minimum counts by signal status), without calling any external services."
+        },
+        {
+          "path": "frontend/src/hooks/useStrategies.ts",
+          "operation": "create",
+          "description": "Create hooks to load/save strategy sets (named, versioned) via backend capabilities, and to select an active set for evaluation."
+        },
+        {
+          "path": "frontend/src/pages/SelfImprovementPage.tsx",
+          "operation": "create",
+          "description": "Build the Self-improvement UI to save and select versioned strategy parameter sets, run an evaluation over backend-stored decision history, and display summary metrics. Use shadcn-ui components (Card, Table, Button, Select, Alert). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/BacktestSummary.tsx",
+          "operation": "create",
+          "description": "Create a summary component for backtest results (counts by status at minimum) with clear empty/loading/error states. Use shadcn-ui Card/Badge components. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Self-improvement screen into the app shell navigation/routing so it is reachable from the dashboard layout."
+        }
+      ]
+    }
+  ]
+}

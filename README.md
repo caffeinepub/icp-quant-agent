@@ -1,2 +1,3 @@
-# icp-quant-agent
-Exported from Caffeine project: icp_quant_agent
+## icp_quant_agent
+
+To run app build and run docker image: `docker build -t app . docker run -it --network host app`

@@ -1,0 +1,171 @@
+{
+  "kind": "build_request",
+  "title": "icp_quant_agent: On-chain DEX state sensing + cross-DEX arbitrage signal prototype (ICPSwap/KongSwap)",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "项目名称：icp_quant_agent，一个面向 **ICP 主网 DEX（ICPSwap / KongSwap）** 的量化价格感知与套利 Agent 原型。"
+        ]
+      },
+      "acceptanceCriteria": [
+        "App renders a clean dashboard layout with consistent styling across header/navigation/content areas",
+        "All visible UI text is English",
+        "Theme does not default to a generic blue/purple palette unless explicitly chosen as part of the defined theme"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "能独立从链上读取价格 / 池子状态"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can add/edit/remove DEX endpoints/settings from the UI",
+        "Settings are stored in the Motoko backend and are restored after refresh",
+        "Validation prevents saving empty/invalid canister ID strings"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Implement backend read-only on-chain state sensing for ICPSwap and KongSwap by calling their canisters to fetch current pool/price state (as supported by the configured identifiers). Expose a backend API that returns normalized snapshots (timestamp, DEX name, pair/pool id, price fields, liquidity/reserve fields when available, and raw response for debugging).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "对 ICP 链上真实状态有感知能力 的 Agent",
+          "能独立从链上读取价格 / 池子状态"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend provides query/update methods to fetch and return a normalized snapshot for each configured DEX/pool",
+        "Snapshot includes a timestamp and the DEX/pair identity used for the request",
+        "If a call fails (bad canister id / unsupported pool / trap), backend returns an error object that the frontend can display without crashing"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "能独立从链上读取价格 / 池子状态"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can see both DEX snapshots for the same configured pair/pool on one screen",
+        "Manual refresh triggers a new backend fetch and updates the UI",
+        "Auto-refresh can be enabled/disabled and does not freeze the UI",
+        "Errors are shown inline per DEX/pool row"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "可判断跨 DEX 价格偏差是否具备套利意义（考虑滑点/费用等）"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can configure analysis parameters: fee rates per DEX (or combined), slippage tolerance/assumption, and minimum profit threshold",
+        "For each pair/pool, UI displays spread %, estimated net profit after costs, and a signal status",
+        "Signal computation is deterministic given the same inputs and snapshots",
+        "When required liquidity/reserve data is unavailable, UI clearly indicates reduced-confidence estimation rather than silently producing numbers"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "最终的icp_quant_agent能具有自动执行 / 自我决策 / 自我进化"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can start and stop the agent loop from the UI",
+        "Agent loop produces decision events at the chosen interval and stores them in backend history",
+        "Decision history is viewable in the UI with timestamp, inputs (spread/costs), and resulting status",
+        "Default mode is dry-run (no swaps submitted)"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "在识别到机会后可自动下单/执行"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Execution controls are disabled by default and require an explicit acknowledgement step to enable",
+        "If execution is not implemented, the UI shows a blocked state and a list of required integration details rather than failing silently",
+        "No trade submission occurs without explicit enablement"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-2"
+        ],
+        "quotes": [
+          "自我进化能力（策略迭代/参数自适应/学习模块的方向）"
+        ]
+      },
+      "acceptanceCriteria": [
+        "User can save named strategy parameter sets with versioning in the backend",
+        "UI can run an evaluation over stored decision history using a selected strategy set and display summary metrics (counts by signal status at minimum)",
+        "No external services are used for learning; all logic is local to the app"
+      ]
+    }
+  ],
+  "constraints": [
+    "Use a single Motoko actor in backend/main.mo for all backend logic",
+    "Do not modify any frontend paths listed as immutable in SYSTEM_CONTEXT",
+    "No external databases or third-party auth providers; use Internet Identity only if authentication is added later",
+    "User-facing text must be English"
+  ],
+  "nonGoals": [
+    "Guaranteeing profitable arbitrage or providing financial advice",
+    "Production-grade automated trading with real funds enabled by default",
+    "Integrations with non-ICP DEXes or off-chain exchanges",
+    "Real-time streaming via WebSockets (use polling only)"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

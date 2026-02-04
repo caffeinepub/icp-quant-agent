@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "icp_quant_agent：面向 ICP 主网 DEX（ICPSwap/KongSwap）的量化价格感知与跨 DEX 套利 Agent 原型，具备链上状态感知、独立读取价格/池状态、判断套利机会，并最终走向自动执行/自我决策/自我进化。",
+  "existing_features": [
+    {
+      "id": "feature-create-a-minimal-app-shell-for-project-icp-quant-agent-with-a-coherent-distinctive-visual-theme-colors-typography-layout-applied-consistently-across-all-screens-user-facing-ui-text-must-be-in-english",
+      "title": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-configuration-ui-to-manage-on-chain-integration-settings-required-for-icpswap-and-kongswap-reads-per-dex-canister-ids-supported-trading-pair-identifiers-e-g-base-quote-symbols-and-any-pool-identifiers-needed-persist-these-settings-in-the-backend-canister-so-they-survive-page-reloads",
+      "title": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-a-frontend-market-watch-dashboard-that-shows-the-latest-snapshots-for-icpswap-and-kongswap-side-by-side-per-configured-pair-pool-including-last-updated-time-price-and-liquidity-reserve-metrics-when-available-include-manual-refresh-controls-and-an-auto-refresh-toggle-with-a-safe-polling-interval",
+      "title": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-cross-dex-price-deviation-and-arbitrage-signal-analysis-compute-spread-between-icpswap-and-kongswap-prices-per-pair-estimate-whether-an-opportunity-is-meaningful-by-accounting-for-configurable-fees-and-slippage-assumptions-and-output-a-clear-signal-status-e-g-no-signal-watch-actionable-with-the-reasoning-inputs-used",
+      "title": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-agent-control-panel-that-supports-a-prototype-decision-loop-1-fetch-snapshots-2-run-analysis-3-record-a-decision-event-what-it-would-do-and-why-include-start-stop-toggles-and-a-history-log-of-decisions-stored-in-the-backend-this-is-a-non-executing-dry-run-agent-by-default",
+      "title": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-a-clearly-separated-execution-mode-scaffold-disabled-by-default-that-defines-the-interface-for-submitting-trades-to-dexes-but-only-enables-execution-after-an-explicit-user-acknowledgement-in-the-ui-if-execution-is-not-yet-implemented-due-to-missing-dex-details-the-ui-must-show-what-additional-information-is-required-e-g-swap-method-signatures-required-arguments",
+      "title": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-self-improvement-scaffolding-module-allow-storing-strategy-versions-and-tunable-parameters-thresholds-polling-interval-slippage-assumptions-with-simple-backtesting-over-the-recorded-decision-history-e-g-evaluate-how-many-historical-snapshots-would-have-been-actionable-this-is-a-direction-setting-prototype-no-external-ml-llm",
+      "title": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "从 ICP 链上独立读取 ICPSwap/KongSwap 的价格与流动性池状态（真实链上状态感知）",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "跨 DEX 价格偏差分析：判断是否存在具备套利意义的机会（考虑滑点/费用等）",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Agent 自动执行与自我决策能力（在识别到机会后可自动下单/执行）",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Agent 自我进化能力（策略迭代/参数自适应/学习模块的方向）",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Implement backend read-only on-chain state sensing for ICPSwap and KongSwap by calling their canisters to fetch current pool/price state (as supported by the configured identifiers). Expose a backend API that returns normalized snapshots (timestamp, DEX name, pair/pool id, price fields, liquidity/reserve fields when available, and raw response for debugging).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    }
+  ],
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
+  "gameProjectType": "none",
+  "projectName": "icp_quant_agent",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

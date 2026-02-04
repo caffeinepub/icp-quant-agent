@@ -1,0 +1,146 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-create-a-minimal-app-shell-for-project-icp-quant-agent-with-a-coherent-distinctive-visual-theme-colors-typography-layout-applied-consistently-across-all-screens-user-facing-ui-text-must-be-in-english",
+      "featureTitle": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
+      "files": [
+        "frontend/index.css",
+        "frontend/src/App.tsx",
+        "frontend/src/components/AppLayout.tsx",
+        "frontend/src/components/SideNav.tsx",
+        "frontend/src/index.css",
+        "frontend/src/main.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-configuration-ui-to-manage-on-chain-integration-settings-required-for-icpswap-and-kongswap-reads-per-dex-canister-ids-supported-trading-pair-identifiers-e-g-base-quote-symbols-and-any-pool-identifiers-needed-persist-these-settings-in-the-backend-canister-so-they-survive-page-reloads",
+      "featureTitle": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/lib/validation.ts",
+        "frontend/src/pages/ConfigurationPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-build-a-frontend-market-watch-dashboard-that-shows-the-latest-snapshots-for-icpswap-and-kongswap-side-by-side-per-configured-pair-pool-including-last-updated-time-price-and-liquidity-reserve-metrics-when-available-include-manual-refresh-controls-and-an-auto-refresh-toggle-with-a-safe-polling-interval",
+      "featureTitle": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/AutoRefreshControl.tsx",
+        "frontend/src/pages/MarketWatchPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-cross-dex-price-deviation-and-arbitrage-signal-analysis-compute-spread-between-icpswap-and-kongswap-prices-per-pair-estimate-whether-an-opportunity-is-meaningful-by-accounting-for-configurable-fees-and-slippage-assumptions-and-output-a-clear-signal-status-e-g-no-signal-watch-actionable-with-the-reasoning-inputs-used",
+      "featureTitle": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
+      "files": [
+        "frontend/src/lib/analysis.ts",
+        "frontend/src/pages/MarketWatchPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-agent-control-panel-that-supports-a-prototype-decision-loop-1-fetch-snapshots-2-run-analysis-3-record-a-decision-event-what-it-would-do-and-why-include-start-stop-toggles-and-a-history-log-of-decisions-stored-in-the-backend-this-is-a-non-executing-dry-run-agent-by-default",
+      "featureTitle": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/DecisionHistoryTable.tsx",
+        "frontend/src/pages/AgentPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-provide-a-clearly-separated-execution-mode-scaffold-disabled-by-default-that-defines-the-interface-for-submitting-trades-to-dexes-but-only-enables-execution-after-an-explicit-user-acknowledgement-in-the-ui-if-execution-is-not-yet-implemented-due-to-missing-dex-details-the-ui-must-show-what-additional-information-is-required-e-g-swap-method-signatures-required-arguments",
+      "featureTitle": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/ExecutionBlockedPanel.tsx",
+        "frontend/src/pages/ExecutionPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-self-improvement-scaffolding-module-allow-storing-strategy-versions-and-tunable-parameters-thresholds-polling-interval-slippage-assumptions-with-simple-backtesting-over-the-recorded-decision-history-e-g-evaluate-how-many-historical-snapshots-would-have-been-actionable-this-is-a-direction-setting-prototype-no-external-ml-llm",
+      "featureTitle": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/SelfImprovementPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-8"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

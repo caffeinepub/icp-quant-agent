@@ -1,0 +1,105 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-04T09:51:29.025Z",
+  "summary": "The diff adds a styled frontend shell with navigation and pages for Configuration, Market Watch, Agent, Execution, and Self-Improvement, plus a Motoko backend actor with basic config storage, snapshot recording, a simple arbitrage analysis function, and decision history logging. However, key requested functionality—actual on-chain state sensing, normalized snapshot fetching APIs with error objects, side-by-side cross-DEX snapshot display, configurable analysis parameters, a real agent loop with interval, and self-improvement persistence/backtesting—is not evidenced in the diff summary.",
+  "missing_requirements": [
+    {
+      "id": "REQ-2",
+      "requirement": "Allow add/edit/remove DEX endpoints/settings (including per-DEX canister IDs and pair/pool identifiers) and persist them in the backend across reloads, with validation preventing saving invalid canister ID strings.",
+      "reason": "UI shows add DEX and add/remove trading pairs, but there is no evidence of editing/removing DEX configs. Backend persistence across upgrades/redeploys is not evidenced (no stable storage shown), and backend-side validation is not shown (frontend-only validation exists).",
+      "evidence": [
+        "frontend/src/pages/ConfigurationPage.tsx",
+        "frontend/src/lib/validation.ts",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Implement backend read-only on-chain state sensing for ICPSwap and KongSwap by calling their canisters and expose an API returning normalized snapshots including timestamp, dex name, pair/pool id, price, liquidity/reserves when available, and raw response; return error objects on failures without crashing.",
+      "reason": "Backend only records snapshots provided by the frontend (recordPriceSnapshot) and computes analysis from stored snapshots; no evidence of inter-canister calls to ICPSwap/KongSwap or any 'fetch snapshot' method. Error handling uses Runtime.trap when snapshots are missing, rather than returning an error object.",
+      "evidence": [
+        "backend/main.mo",
+        "frontend/src/hooks/useQueries.ts"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Market Watch dashboard shows latest ICPSwap and KongSwap snapshots side-by-side per configured pair/pool, with manual refresh and auto-refresh polling; errors shown inline per DEX/pool row.",
+      "reason": "MarketWatchPage currently renders placeholder values ('--', 'Awaiting data') and refresh only refetches configs. There is no evidence of calling a backend snapshot-fetch API, no side-by-side ICPSwap/KongSwap comparison per pair, and no per-row inline error display for snapshot fetch failures.",
+      "evidence": [
+        "frontend/src/pages/MarketWatchPage.tsx",
+        "frontend/src/components/AutoRefreshControl.tsx"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Cross-DEX price deviation and arbitrage-signal analysis with configurable parameters (fees, slippage, min profit), displaying spread %, estimated net profit after costs, signal status, and reduced-confidence messaging when liquidity data is missing.",
+      "reason": "A frontend analysis helper exists (analyzeSpread) supporting params and reduced-confidence reasoning, but there is no evidence of a UI to configure these parameters or to display spread/net-profit/signal per pair using live snapshots. Backend runArbitrageAnalysis uses fixed thresholds/fees and traps if snapshots are missing, rather than deterministic computation based on user-configured inputs and safe error returns.",
+      "evidence": [
+        "frontend/src/lib/analysis.ts",
+        "backend/main.mo",
+        "frontend/src/pages/MarketWatchPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Agent control panel with a prototype decision loop: fetch snapshots, run analysis, record decision events on an interval; Start/Stop toggles; decision history stored in backend and viewable in UI; dry-run by default.",
+      "reason": "UI provides Start/Stop buttons and shows backend decision history, but backend startAgent/stopAgent only log events and do not implement a timed loop, chosen interval, snapshot fetching, or analysis execution as part of the loop.",
+      "evidence": [
+        "frontend/src/pages/AgentPage.tsx",
+        "backend/main.mo",
+        "frontend/src/components/DecisionHistoryTable.tsx"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Self-improvement module: store named strategy parameter sets with versioning in backend and run simple backtesting over recorded decision history with summary metrics displayed in UI.",
+      "reason": "SelfImprovementPage is informational only and explicitly says features are under development; no backend types/methods for storing strategy versions or running evaluations are evidenced.",
+      "evidence": [
+        "frontend/src/pages/SelfImprovementPage.tsx",
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Internet Identity authentication hook/provider integrated into the app despite authentication only being mentioned as a future possibility (\"use Internet Identity only if authentication is added later\").",
+      "reason": "BuildRequest did not request adding authentication in this iteration; the diff adds an InternetIdentityProvider and related hooks.",
+      "evidence": [
+        "frontend/src/main.tsx",
+        "frontend/src/hooks/useInternetIdentity.ts",
+        "frontend/src/hooks/useActor.ts"
+      ]
+    }
+  ],
+  "confidence": 0.74,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AppLayout.tsx",
+    "frontend/src/components/AutoRefreshControl.tsx",
+    "frontend/src/components/DecisionHistoryTable.tsx",
+    "frontend/src/components/ExecutionBlockedPanel.tsx",
+    "frontend/src/components/SideNav.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/lib/analysis.ts",
+    "frontend/src/lib/utils.ts",
+    "frontend/src/lib/validation.ts",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/AgentPage.tsx",
+    "frontend/src/pages/ConfigurationPage.tsx",
+    "frontend/src/pages/ExecutionPage.tsx",
+    "frontend/src/pages/MarketWatchPage.tsx",
+    "frontend/src/pages/SelfImprovementPage.tsx",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}
