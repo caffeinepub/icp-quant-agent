@@ -2,54 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-create-a-minimal-app-shell-for-project-icp-quant-agent-with-a-coherent-distinctive-visual-theme-colors-typography-layout-applied-consistently-across-all-screens-user-facing-ui-text-must-be-in-english",
-      "featureTitle": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
+      "featureId": "feature-backend-frontend-define-tri-state-system-ready-as-is-mainnet-is-live-source-is-timer-running-expose-these-three-booleans-and-the-computed-systemready-value-in-a-backend-status-api-that-the-frontend-can-poll-on-the-dashboard-market-watch-page-display-system-ready-as-a-green-shield-icon-when-true-and-a-clearly-not-ready-state-when-false-use-english-for-any-user-facing-labels-tooltips",
+      "featureTitle": "Backend + Frontend: Define Tri-State `System_Ready` as (is_Mainnet && is_Live_Source && is_Timer_Running). Expose these three booleans and the computed `systemReady` value in a backend status API that the frontend can poll. On the Dashboard (Market Watch page), display `System Ready` as a Green Shield icon when true (and a clearly \"not ready\" state when false). Use English for any user-facing labels/tooltips.",
       "files": [
-        "frontend/index.css",
-        "frontend/src/App.tsx",
-        "frontend/src/components/AppLayout.tsx",
-        "frontend/src/components/SideNav.tsx",
-        "frontend/src/index.css",
-        "frontend/src/main.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-configuration-ui-to-manage-on-chain-integration-settings-required-for-icpswap-and-kongswap-reads-per-dex-canister-ids-supported-trading-pair-identifiers-e-g-base-quote-symbols-and-any-pool-identifiers-needed-persist-these-settings-in-the-backend-canister-so-they-survive-page-reloads",
-      "featureTitle": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/lib/validation.ts",
-        "frontend/src/pages/ConfigurationPage.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-build-a-frontend-market-watch-dashboard-that-shows-the-latest-snapshots-for-icpswap-and-kongswap-side-by-side-per-configured-pair-pool-including-last-updated-time-price-and-liquidity-reserve-metrics-when-available-include-manual-refresh-controls-and-an-auto-refresh-toggle-with-a-safe-polling-interval",
-      "featureTitle": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/AutoRefreshControl.tsx",
+        "frontend/src/components/SystemReadyIndicator.tsx",
+        "frontend/src/hooks/useQueries.ts",
         "frontend/src/pages/MarketWatchPage.tsx"
       ],
       "components": [
@@ -57,46 +14,8 @@
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-cross-dex-price-deviation-and-arbitrage-signal-analysis-compute-spread-between-icpswap-and-kongswap-prices-per-pair-estimate-whether-an-opportunity-is-meaningful-by-accounting-for-configurable-fees-and-slippage-assumptions-and-output-a-clear-signal-status-e-g-no-signal-watch-actionable-with-the-reasoning-inputs-used",
-      "featureTitle": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
-      "files": [
-        "frontend/src/lib/analysis.ts",
-        "frontend/src/pages/MarketWatchPage.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-an-agent-control-panel-that-supports-a-prototype-decision-loop-1-fetch-snapshots-2-run-analysis-3-record-a-decision-event-what-it-would-do-and-why-include-start-stop-toggles-and-a-history-log-of-decisions-stored-in-the-backend-this-is-a-non-executing-dry-run-agent-by-default",
-      "featureTitle": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/DecisionHistoryTable.tsx",
-        "frontend/src/pages/AgentPage.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-6"
@@ -104,19 +23,22 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-provide-a-clearly-separated-execution-mode-scaffold-disabled-by-default-that-defines-the-interface-for-submitting-trades-to-dexes-but-only-enables-execution-after-an-explicit-user-acknowledgement-in-the-ui-if-execution-is-not-yet-implemented-due-to-missing-dex-details-the-ui-must-show-what-additional-information-is-required-e-g-swap-method-signatures-required-arguments",
-      "featureTitle": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "featureId": "feature-backend-frontend-add-timer-start-failure-handling-if-the-10-second-timer-fails-to-start-including-any-trap-error-condition-during-the-start-attempt-return-a-failure-result-from-the-relevant-backend-call-s-and-surface-a-persistent-canister-timeout-warning-in-a-notification-center-ui-in-the-frontend-not-only-as-a-transient-toast",
+      "featureTitle": "Backend + Frontend: Add timer start failure handling. If the 10-second timer fails to start (including any trap/error condition during the start attempt), return a failure result from the relevant backend call(s) and surface a persistent \"Canister Timeout\" warning in a Notification Center UI in the frontend (not only as a transient toast).",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/ExecutionBlockedPanel.tsx",
-        "frontend/src/pages/ExecutionPage.tsx"
+        "frontend/src/components/AppLayout.tsx",
+        "frontend/src/components/NotificationCenter.tsx",
+        "frontend/src/hooks/useNotificationCenter.ts",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/lib/notificationCenter.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-7"
@@ -124,21 +46,43 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-self-improvement-scaffolding-module-allow-storing-strategy-versions-and-tunable-parameters-thresholds-polling-interval-slippage-assumptions-with-simple-backtesting-over-the-recorded-decision-history-e-g-evaluate-how-many-historical-snapshots-would-have-been-actionable-this-is-a-direction-setting-prototype-no-external-ml-llm",
-      "featureTitle": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
+      "featureId": "feature-frontend-update-tick-synchronization-behavior-to-align-ui-refresh-cadence-with-the-backend-10-second-timer-by-polling-the-backend-last-update-id-on-a-10-second-interval-and-using-it-as-the-source-of-truth-for-when-to-refresh-tick-dependent-widgets-including-the-1-minute-volatility-chart-so-the-dashboard-reflects-the-exact-backend-tick-state",
+      "featureTitle": "Frontend: Update tick synchronization behavior to align UI refresh cadence with the backend 10-second timer by polling the backend `last_update_id` on a 10-second interval and using it as the source of truth for when to refresh tick-dependent widgets (including the 1-minute volatility chart) so the dashboard reflects the exact backend tick state.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/SelfImprovementPage.tsx"
+        "frontend/src/components/CkBtcIcpRatioWidget.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
         "shadcn-ui@1.0.0",
         "build-template-react@1.0.0",
         "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0"
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
       ],
       "testIds": [
         "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-finalize-version-10-for-release-ensure-candid-type-definitions-and-react-query-hooks-are-updated-to-match-any-backend-api-signature-changes-introduced-by-version-10-status-apis-last-update-id-start-results-and-ensure-the-app-builds-cleanly-and-is-ready-to-deploy-as-version-10",
+      "featureTitle": "Finalize Version 10 for release: ensure candid/type definitions and React Query hooks are updated to match any backend API signature changes introduced by Version 10 (status APIs, last_update_id, start results), and ensure the app builds cleanly and is ready to deploy as \"Version 10\".",
+      "files": [
+        "frontend/src/components/AppLayout.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/MarketWatchPage.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-9"
       ],
       "confidence": "high"
     }

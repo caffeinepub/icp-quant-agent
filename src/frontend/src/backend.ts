@@ -89,6 +89,22 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface DEXConfigIdentifiers {
+    icpSwapCanisterId?: string;
+    kongSwapCanisterId?: string;
+}
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
+export type Time = bigint;
+export interface DecisionEvent {
+    result: string;
+    step: string;
+    timestamp: Time;
+    details: string;
+}
 export interface ArbitrageSignal {
     action: string;
     reasoning: string;
@@ -97,11 +113,12 @@ export interface ArbitrageSignal {
     spreadPercent: number;
     pairId: string;
 }
-export interface PairConfig {
-    feeBps: bigint;
-    quoteSymbol: string;
-    baseSymbol: string;
-    poolId: string;
+export interface LatencyMetric {
+    stage: string;
+    operation: string;
+    timestamp: Time;
+    details: string;
+    durationNs: bigint;
 }
 export interface DEXConfig {
     id: bigint;
@@ -109,12 +126,33 @@ export interface DEXConfig {
     name: string;
     canisterId: string;
 }
-export type Time = bigint;
-export interface DecisionEvent {
-    result: string;
-    step: string;
+export interface http_header {
+    value: string;
+    name: string;
+}
+export interface ShadowExecutionMetrics {
+    successRate: number;
+    totalOpportunities: bigint;
+    shadowExecutionLog: Array<TradeLogEntry>;
+    avgSpreadCaptured: number;
+}
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
+export interface TradeLogEntry {
+    status: ShadowTradeStatus;
+    resolutionReason?: string;
     timestamp: Time;
-    details: string;
+    entryPrice: number;
+    exitPrice?: number;
+    pairId: string;
+    realizedReturn?: number;
+}
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
 }
 export interface PriceSnapshot {
     reserves?: [number, number];
@@ -124,19 +162,64 @@ export interface PriceSnapshot {
     pairId: string;
     dexName: string;
 }
+export interface PricePoint {
+    timestamp: Time;
+    price: number;
+}
+export interface PairConfig {
+    feeBps: bigint;
+    quoteSymbol: string;
+    baseSymbol: string;
+    poolId: string;
+}
+export interface SignalDetectionEvent {
+    tvl: number;
+    estimatedReturn: number;
+    riskCategory: string;
+    fees: number;
+    priceDelta: number;
+    safeOrderSize: number;
+    highRisk: boolean;
+    signalsPerHour: bigint;
+    timestamp: Time;
+    avgPriceDeviation: number;
+    pairId: string;
+}
+export enum ShadowTradeStatus {
+    active = "active",
+    success = "success",
+    timeout = "timeout",
+    failed = "failed"
+}
 export interface backendInterface {
     addDEXConfig(name: string, canisterId: string, tradingPairs: Array<PairConfig>): Promise<bigint>;
+    addLatencyMetric(operation: string, durationNs: bigint, stage: string, details: string): Promise<void>;
+    addPricePoint(price: number): Promise<void>;
+    calculateSmartDelay(): Promise<bigint>;
+    detectLiveSignal(pairId: string, currentPrice: number, tvlUSD: number): Promise<SignalDetectionEvent | null>;
+    dryRunDecision(fromDEX: string, toDEX: string, pairId: string, amount: number): Promise<number>;
+    fetchUSDTPriceFromBinance(): Promise<number>;
     getAllDEXConfigs(): Promise<Array<DEXConfig>>;
+    getAllLatencyMetrics(): Promise<Array<LatencyMetric>>;
+    getAllPoolPrices(): Promise<Array<PricePoint>>;
     getDecisionHistory(): Promise<Array<DecisionEvent>>;
+    getDexConfig(): Promise<DEXConfigIdentifiers>;
+    getPoolPrice(): Promise<PricePoint | null>;
+    getSafeOptimizerDataset(): Promise<Array<SignalDetectionEvent>>;
+    getShadowExecutionMetrics(): Promise<ShadowExecutionMetrics>;
     getSortedDEXConfigs(): Promise<Array<DEXConfig>>;
     recordPriceSnapshot(snapshot: PriceSnapshot): Promise<void>;
     runArbitrageAnalysis(pairId: string): Promise<ArbitrageSignal>;
+    runArbitrageAnalysisBetweenDEXs(fromDEX: string, toDEX: string, pairId: string): Promise<ArbitrageSignal>;
     setDEXConfigStatus(dexId: bigint, isActive: boolean): Promise<void>;
+    setDexConfig(newConfig: DEXConfigIdentifiers): Promise<void>;
     startAgent(): Promise<void>;
+    startShadowTradeEvaluationTimer(): Promise<void>;
     stopAgent(): Promise<void>;
+    transform(input: TransformationInput): Promise<TransformationOutput>;
     updateTradingPairs(dexId: bigint, newTradingPairs: Array<PairConfig>): Promise<void>;
 }
-import type { PriceSnapshot as _PriceSnapshot, Time as _Time } from "./declarations/backend.did.d.ts";
+import type { DEXConfigIdentifiers as _DEXConfigIdentifiers, PricePoint as _PricePoint, PriceSnapshot as _PriceSnapshot, ShadowExecutionMetrics as _ShadowExecutionMetrics, ShadowTradeStatus as _ShadowTradeStatus, SignalDetectionEvent as _SignalDetectionEvent, Time as _Time, TradeLogEntry as _TradeLogEntry } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async addDEXConfig(arg0: string, arg1: string, arg2: Array<PairConfig>): Promise<bigint> {
@@ -150,6 +233,90 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addDEXConfig(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async addLatencyMetric(arg0: string, arg1: bigint, arg2: string, arg3: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addLatencyMetric(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addLatencyMetric(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async addPricePoint(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addPricePoint(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addPricePoint(arg0);
+            return result;
+        }
+    }
+    async calculateSmartDelay(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.calculateSmartDelay();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.calculateSmartDelay();
+            return result;
+        }
+    }
+    async detectLiveSignal(arg0: string, arg1: number, arg2: number): Promise<SignalDetectionEvent | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.detectLiveSignal(arg0, arg1, arg2);
+                return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.detectLiveSignal(arg0, arg1, arg2);
+            return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async dryRunDecision(arg0: string, arg1: string, arg2: string, arg3: number): Promise<number> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.dryRunDecision(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.dryRunDecision(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async fetchUSDTPriceFromBinance(): Promise<number> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.fetchUSDTPriceFromBinance();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.fetchUSDTPriceFromBinance();
             return result;
         }
     }
@@ -167,6 +334,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getAllLatencyMetrics(): Promise<Array<LatencyMetric>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllLatencyMetrics();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllLatencyMetrics();
+            return result;
+        }
+    }
+    async getAllPoolPrices(): Promise<Array<PricePoint>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllPoolPrices();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllPoolPrices();
+            return result;
+        }
+    }
     async getDecisionHistory(): Promise<Array<DecisionEvent>> {
         if (this.processError) {
             try {
@@ -179,6 +374,62 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getDecisionHistory();
             return result;
+        }
+    }
+    async getDexConfig(): Promise<DEXConfigIdentifiers> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getDexConfig();
+                return from_candid_DEXConfigIdentifiers_n2(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getDexConfig();
+            return from_candid_DEXConfigIdentifiers_n2(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPoolPrice(): Promise<PricePoint | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPoolPrice();
+                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPoolPrice();
+            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getSafeOptimizerDataset(): Promise<Array<SignalDetectionEvent>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSafeOptimizerDataset();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSafeOptimizerDataset();
+            return result;
+        }
+    }
+    async getShadowExecutionMetrics(): Promise<ShadowExecutionMetrics> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getShadowExecutionMetrics();
+                return from_candid_ShadowExecutionMetrics_n6(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getShadowExecutionMetrics();
+            return from_candid_ShadowExecutionMetrics_n6(this._uploadFile, this._downloadFile, result);
         }
     }
     async getSortedDEXConfigs(): Promise<Array<DEXConfig>> {
@@ -198,14 +449,14 @@ export class Backend implements backendInterface {
     async recordPriceSnapshot(arg0: PriceSnapshot): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.recordPriceSnapshot(to_candid_PriceSnapshot_n1(this._uploadFile, this._downloadFile, arg0));
+                const result = await this.actor.recordPriceSnapshot(to_candid_PriceSnapshot_n14(this._uploadFile, this._downloadFile, arg0));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.recordPriceSnapshot(to_candid_PriceSnapshot_n1(this._uploadFile, this._downloadFile, arg0));
+            const result = await this.actor.recordPriceSnapshot(to_candid_PriceSnapshot_n14(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -223,6 +474,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async runArbitrageAnalysisBetweenDEXs(arg0: string, arg1: string, arg2: string): Promise<ArbitrageSignal> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.runArbitrageAnalysisBetweenDEXs(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.runArbitrageAnalysisBetweenDEXs(arg0, arg1, arg2);
+            return result;
+        }
+    }
     async setDEXConfigStatus(arg0: bigint, arg1: boolean): Promise<void> {
         if (this.processError) {
             try {
@@ -234,6 +499,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.setDEXConfigStatus(arg0, arg1);
+            return result;
+        }
+    }
+    async setDexConfig(arg0: DEXConfigIdentifiers): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setDexConfig(to_candid_DEXConfigIdentifiers_n16(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setDexConfig(to_candid_DEXConfigIdentifiers_n16(this._uploadFile, this._downloadFile, arg0));
             return result;
         }
     }
@@ -251,6 +530,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async startShadowTradeEvaluationTimer(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.startShadowTradeEvaluationTimer();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.startShadowTradeEvaluationTimer();
+            return result;
+        }
+    }
     async stopAgent(): Promise<void> {
         if (this.processError) {
             try {
@@ -262,6 +555,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.stopAgent();
+            return result;
+        }
+    }
+    async transform(arg0: TransformationInput): Promise<TransformationOutput> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.transform(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.transform(arg0);
             return result;
         }
     }
@@ -280,10 +587,108 @@ export class Backend implements backendInterface {
         }
     }
 }
-function to_candid_PriceSnapshot_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: PriceSnapshot): _PriceSnapshot {
-    return to_candid_record_n2(_uploadFile, _downloadFile, value);
+function from_candid_DEXConfigIdentifiers_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _DEXConfigIdentifiers): DEXConfigIdentifiers {
+    return from_candid_record_n3(_uploadFile, _downloadFile, value);
 }
-function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_ShadowExecutionMetrics_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ShadowExecutionMetrics): ShadowExecutionMetrics {
+    return from_candid_record_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_ShadowTradeStatus_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ShadowTradeStatus): ShadowTradeStatus {
+    return from_candid_variant_n12(_uploadFile, _downloadFile, value);
+}
+function from_candid_TradeLogEntry_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TradeLogEntry): TradeLogEntry {
+    return from_candid_record_n10(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_SignalDetectionEvent]): SignalDetectionEvent | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [number]): number | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_PricePoint]): PricePoint | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    status: _ShadowTradeStatus;
+    resolutionReason: [] | [string];
+    timestamp: _Time;
+    entryPrice: number;
+    exitPrice: [] | [number];
+    pairId: string;
+    realizedReturn: [] | [number];
+}): {
+    status: ShadowTradeStatus;
+    resolutionReason?: string;
+    timestamp: Time;
+    entryPrice: number;
+    exitPrice?: number;
+    pairId: string;
+    realizedReturn?: number;
+} {
+    return {
+        status: from_candid_ShadowTradeStatus_n11(_uploadFile, _downloadFile, value.status),
+        resolutionReason: record_opt_to_undefined(from_candid_opt_n4(_uploadFile, _downloadFile, value.resolutionReason)),
+        timestamp: value.timestamp,
+        entryPrice: value.entryPrice,
+        exitPrice: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.exitPrice)),
+        pairId: value.pairId,
+        realizedReturn: record_opt_to_undefined(from_candid_opt_n13(_uploadFile, _downloadFile, value.realizedReturn))
+    };
+}
+function from_candid_record_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    icpSwapCanisterId: [] | [string];
+    kongSwapCanisterId: [] | [string];
+}): {
+    icpSwapCanisterId?: string;
+    kongSwapCanisterId?: string;
+} {
+    return {
+        icpSwapCanisterId: record_opt_to_undefined(from_candid_opt_n4(_uploadFile, _downloadFile, value.icpSwapCanisterId)),
+        kongSwapCanisterId: record_opt_to_undefined(from_candid_opt_n4(_uploadFile, _downloadFile, value.kongSwapCanisterId))
+    };
+}
+function from_candid_record_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    successRate: number;
+    totalOpportunities: bigint;
+    shadowExecutionLog: Array<_TradeLogEntry>;
+    avgSpreadCaptured: number;
+}): {
+    successRate: number;
+    totalOpportunities: bigint;
+    shadowExecutionLog: Array<TradeLogEntry>;
+    avgSpreadCaptured: number;
+} {
+    return {
+        successRate: value.successRate,
+        totalOpportunities: value.totalOpportunities,
+        shadowExecutionLog: from_candid_vec_n8(_uploadFile, _downloadFile, value.shadowExecutionLog),
+        avgSpreadCaptured: value.avgSpreadCaptured
+    };
+}
+function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    active: null;
+} | {
+    success: null;
+} | {
+    timeout: null;
+} | {
+    failed: null;
+}): ShadowTradeStatus {
+    return "active" in value ? ShadowTradeStatus.active : "success" in value ? ShadowTradeStatus.success : "timeout" in value ? ShadowTradeStatus.timeout : "failed" in value ? ShadowTradeStatus.failed : value;
+}
+function from_candid_vec_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_TradeLogEntry>): Array<TradeLogEntry> {
+    return value.map((x)=>from_candid_TradeLogEntry_n9(_uploadFile, _downloadFile, x));
+}
+function to_candid_DEXConfigIdentifiers_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: DEXConfigIdentifiers): _DEXConfigIdentifiers {
+    return to_candid_record_n17(_uploadFile, _downloadFile, value);
+}
+function to_candid_PriceSnapshot_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: PriceSnapshot): _PriceSnapshot {
+    return to_candid_record_n15(_uploadFile, _downloadFile, value);
+}
+function to_candid_record_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     reserves?: [number, number];
     timestamp: Time;
     price: number;
@@ -305,6 +710,18 @@ function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8A
         rawResponse: value.rawResponse,
         pairId: value.pairId,
         dexName: value.dexName
+    };
+}
+function to_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    icpSwapCanisterId?: string;
+    kongSwapCanisterId?: string;
+}): {
+    icpSwapCanisterId: [] | [string];
+    kongSwapCanisterId: [] | [string];
+} {
+    return {
+        icpSwapCanisterId: value.icpSwapCanisterId ? candid_some(value.icpSwapCanisterId) : candid_none(),
+        kongSwapCanisterId: value.kongSwapCanisterId ? candid_some(value.kongSwapCanisterId) : candid_none()
     };
 }
 export interface CreateActorOptions {

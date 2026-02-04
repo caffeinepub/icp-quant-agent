@@ -14,18 +14,67 @@ export const PairConfig = IDL.Record({
   'baseSymbol' : IDL.Text,
   'poolId' : IDL.Text,
 });
+export const Time = IDL.Int;
+export const SignalDetectionEvent = IDL.Record({
+  'tvl' : IDL.Float64,
+  'estimatedReturn' : IDL.Float64,
+  'riskCategory' : IDL.Text,
+  'fees' : IDL.Float64,
+  'priceDelta' : IDL.Float64,
+  'safeOrderSize' : IDL.Float64,
+  'highRisk' : IDL.Bool,
+  'signalsPerHour' : IDL.Nat,
+  'timestamp' : Time,
+  'avgPriceDeviation' : IDL.Float64,
+  'pairId' : IDL.Text,
+});
 export const DEXConfig = IDL.Record({
   'id' : IDL.Nat,
   'tradingPairs' : IDL.Vec(PairConfig),
   'name' : IDL.Text,
   'canisterId' : IDL.Text,
 });
-export const Time = IDL.Int;
+export const LatencyMetric = IDL.Record({
+  'stage' : IDL.Text,
+  'operation' : IDL.Text,
+  'timestamp' : Time,
+  'details' : IDL.Text,
+  'durationNs' : IDL.Int,
+});
+export const PricePoint = IDL.Record({
+  'timestamp' : Time,
+  'price' : IDL.Float64,
+});
 export const DecisionEvent = IDL.Record({
   'result' : IDL.Text,
   'step' : IDL.Text,
   'timestamp' : Time,
   'details' : IDL.Text,
+});
+export const DEXConfigIdentifiers = IDL.Record({
+  'icpSwapCanisterId' : IDL.Opt(IDL.Text),
+  'kongSwapCanisterId' : IDL.Opt(IDL.Text),
+});
+export const ShadowTradeStatus = IDL.Variant({
+  'active' : IDL.Null,
+  'success' : IDL.Null,
+  'timeout' : IDL.Null,
+  'failed' : IDL.Null,
+});
+export const TradeLogEntry = IDL.Record({
+  'status' : ShadowTradeStatus,
+  'resolutionReason' : IDL.Opt(IDL.Text),
+  'timestamp' : Time,
+  'entryPrice' : IDL.Float64,
+  'exitPrice' : IDL.Opt(IDL.Float64),
+  'pairId' : IDL.Text,
+  'realizedReturn' : IDL.Opt(IDL.Float64),
+});
+export const ShadowExecutionMetrics = IDL.Record({
+  'successRate' : IDL.Float64,
+  'totalOpportunities' : IDL.Nat,
+  'shadowExecutionLog' : IDL.Vec(TradeLogEntry),
+  'avgSpreadCaptured' : IDL.Float64,
 });
 export const PriceSnapshot = IDL.Record({
   'reserves' : IDL.Opt(IDL.Tuple(IDL.Float64, IDL.Float64)),
@@ -43,6 +92,24 @@ export const ArbitrageSignal = IDL.Record({
   'spreadPercent' : IDL.Float64,
   'pairId' : IDL.Text,
 });
+export const http_header = IDL.Record({
+  'value' : IDL.Text,
+  'name' : IDL.Text,
+});
+export const http_request_result = IDL.Record({
+  'status' : IDL.Nat,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(http_header),
+});
+export const TransformationInput = IDL.Record({
+  'context' : IDL.Vec(IDL.Nat8),
+  'response' : http_request_result,
+});
+export const TransformationOutput = IDL.Record({
+  'status' : IDL.Nat,
+  'body' : IDL.Vec(IDL.Nat8),
+  'headers' : IDL.Vec(http_header),
+});
 
 export const idlService = IDL.Service({
   'addDEXConfig' : IDL.Func(
@@ -50,14 +117,58 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       [],
     ),
+  'addLatencyMetric' : IDL.Func(
+      [IDL.Text, IDL.Int, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
+  'addPricePoint' : IDL.Func([IDL.Float64], [], []),
+  'calculateSmartDelay' : IDL.Func([], [IDL.Int], []),
+  'detectLiveSignal' : IDL.Func(
+      [IDL.Text, IDL.Float64, IDL.Float64],
+      [IDL.Opt(SignalDetectionEvent)],
+      [],
+    ),
+  'dryRunDecision' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Float64],
+      [IDL.Float64],
+      [],
+    ),
+  'fetchUSDTPriceFromBinance' : IDL.Func([], [IDL.Float64], []),
   'getAllDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], []),
+  'getAllLatencyMetrics' : IDL.Func([], [IDL.Vec(LatencyMetric)], ['query']),
+  'getAllPoolPrices' : IDL.Func([], [IDL.Vec(PricePoint)], []),
   'getDecisionHistory' : IDL.Func([], [IDL.Vec(DecisionEvent)], ['query']),
+  'getDexConfig' : IDL.Func([], [DEXConfigIdentifiers], ['query']),
+  'getPoolPrice' : IDL.Func([], [IDL.Opt(PricePoint)], []),
+  'getSafeOptimizerDataset' : IDL.Func(
+      [],
+      [IDL.Vec(SignalDetectionEvent)],
+      ['query'],
+    ),
+  'getShadowExecutionMetrics' : IDL.Func(
+      [],
+      [ShadowExecutionMetrics],
+      ['query'],
+    ),
   'getSortedDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], ['query']),
   'recordPriceSnapshot' : IDL.Func([PriceSnapshot], [], []),
   'runArbitrageAnalysis' : IDL.Func([IDL.Text], [ArbitrageSignal], []),
+  'runArbitrageAnalysisBetweenDEXs' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [ArbitrageSignal],
+      [],
+    ),
   'setDEXConfigStatus' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
+  'setDexConfig' : IDL.Func([DEXConfigIdentifiers], [], []),
   'startAgent' : IDL.Func([], [], []),
+  'startShadowTradeEvaluationTimer' : IDL.Func([], [], []),
   'stopAgent' : IDL.Func([], [], []),
+  'transform' : IDL.Func(
+      [TransformationInput],
+      [TransformationOutput],
+      ['query'],
+    ),
   'updateTradingPairs' : IDL.Func([IDL.Nat, IDL.Vec(PairConfig)], [], []),
 });
 
@@ -70,18 +181,64 @@ export const idlFactory = ({ IDL }) => {
     'baseSymbol' : IDL.Text,
     'poolId' : IDL.Text,
   });
+  const Time = IDL.Int;
+  const SignalDetectionEvent = IDL.Record({
+    'tvl' : IDL.Float64,
+    'estimatedReturn' : IDL.Float64,
+    'riskCategory' : IDL.Text,
+    'fees' : IDL.Float64,
+    'priceDelta' : IDL.Float64,
+    'safeOrderSize' : IDL.Float64,
+    'highRisk' : IDL.Bool,
+    'signalsPerHour' : IDL.Nat,
+    'timestamp' : Time,
+    'avgPriceDeviation' : IDL.Float64,
+    'pairId' : IDL.Text,
+  });
   const DEXConfig = IDL.Record({
     'id' : IDL.Nat,
     'tradingPairs' : IDL.Vec(PairConfig),
     'name' : IDL.Text,
     'canisterId' : IDL.Text,
   });
-  const Time = IDL.Int;
+  const LatencyMetric = IDL.Record({
+    'stage' : IDL.Text,
+    'operation' : IDL.Text,
+    'timestamp' : Time,
+    'details' : IDL.Text,
+    'durationNs' : IDL.Int,
+  });
+  const PricePoint = IDL.Record({ 'timestamp' : Time, 'price' : IDL.Float64 });
   const DecisionEvent = IDL.Record({
     'result' : IDL.Text,
     'step' : IDL.Text,
     'timestamp' : Time,
     'details' : IDL.Text,
+  });
+  const DEXConfigIdentifiers = IDL.Record({
+    'icpSwapCanisterId' : IDL.Opt(IDL.Text),
+    'kongSwapCanisterId' : IDL.Opt(IDL.Text),
+  });
+  const ShadowTradeStatus = IDL.Variant({
+    'active' : IDL.Null,
+    'success' : IDL.Null,
+    'timeout' : IDL.Null,
+    'failed' : IDL.Null,
+  });
+  const TradeLogEntry = IDL.Record({
+    'status' : ShadowTradeStatus,
+    'resolutionReason' : IDL.Opt(IDL.Text),
+    'timestamp' : Time,
+    'entryPrice' : IDL.Float64,
+    'exitPrice' : IDL.Opt(IDL.Float64),
+    'pairId' : IDL.Text,
+    'realizedReturn' : IDL.Opt(IDL.Float64),
+  });
+  const ShadowExecutionMetrics = IDL.Record({
+    'successRate' : IDL.Float64,
+    'totalOpportunities' : IDL.Nat,
+    'shadowExecutionLog' : IDL.Vec(TradeLogEntry),
+    'avgSpreadCaptured' : IDL.Float64,
   });
   const PriceSnapshot = IDL.Record({
     'reserves' : IDL.Opt(IDL.Tuple(IDL.Float64, IDL.Float64)),
@@ -99,6 +256,21 @@ export const idlFactory = ({ IDL }) => {
     'spreadPercent' : IDL.Float64,
     'pairId' : IDL.Text,
   });
+  const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
+  const http_request_result = IDL.Record({
+    'status' : IDL.Nat,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(http_header),
+  });
+  const TransformationInput = IDL.Record({
+    'context' : IDL.Vec(IDL.Nat8),
+    'response' : http_request_result,
+  });
+  const TransformationOutput = IDL.Record({
+    'status' : IDL.Nat,
+    'body' : IDL.Vec(IDL.Nat8),
+    'headers' : IDL.Vec(http_header),
+  });
   
   return IDL.Service({
     'addDEXConfig' : IDL.Func(
@@ -106,14 +278,58 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         [],
       ),
+    'addLatencyMetric' : IDL.Func(
+        [IDL.Text, IDL.Int, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
+    'addPricePoint' : IDL.Func([IDL.Float64], [], []),
+    'calculateSmartDelay' : IDL.Func([], [IDL.Int], []),
+    'detectLiveSignal' : IDL.Func(
+        [IDL.Text, IDL.Float64, IDL.Float64],
+        [IDL.Opt(SignalDetectionEvent)],
+        [],
+      ),
+    'dryRunDecision' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Float64],
+        [IDL.Float64],
+        [],
+      ),
+    'fetchUSDTPriceFromBinance' : IDL.Func([], [IDL.Float64], []),
     'getAllDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], []),
+    'getAllLatencyMetrics' : IDL.Func([], [IDL.Vec(LatencyMetric)], ['query']),
+    'getAllPoolPrices' : IDL.Func([], [IDL.Vec(PricePoint)], []),
     'getDecisionHistory' : IDL.Func([], [IDL.Vec(DecisionEvent)], ['query']),
+    'getDexConfig' : IDL.Func([], [DEXConfigIdentifiers], ['query']),
+    'getPoolPrice' : IDL.Func([], [IDL.Opt(PricePoint)], []),
+    'getSafeOptimizerDataset' : IDL.Func(
+        [],
+        [IDL.Vec(SignalDetectionEvent)],
+        ['query'],
+      ),
+    'getShadowExecutionMetrics' : IDL.Func(
+        [],
+        [ShadowExecutionMetrics],
+        ['query'],
+      ),
     'getSortedDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], ['query']),
     'recordPriceSnapshot' : IDL.Func([PriceSnapshot], [], []),
     'runArbitrageAnalysis' : IDL.Func([IDL.Text], [ArbitrageSignal], []),
+    'runArbitrageAnalysisBetweenDEXs' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [ArbitrageSignal],
+        [],
+      ),
     'setDEXConfigStatus' : IDL.Func([IDL.Nat, IDL.Bool], [], []),
+    'setDexConfig' : IDL.Func([DEXConfigIdentifiers], [], []),
     'startAgent' : IDL.Func([], [], []),
+    'startShadowTradeEvaluationTimer' : IDL.Func([], [], []),
     'stopAgent' : IDL.Func([], [], []),
+    'transform' : IDL.Func(
+        [TransformationInput],
+        [TransformationOutput],
+        ['query'],
+      ),
     'updateTradingPairs' : IDL.Func([IDL.Nat, IDL.Vec(PairConfig)], [], []),
   });
 };

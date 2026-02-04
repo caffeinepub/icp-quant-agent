@@ -1,16 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Build a minimal prototype app (“icp_quant_agent”) that can be configured to read ICPSwap/KongSwap on-chain pool state, display normalized market snapshots, compute cross-DEX deviation/arbitrage signals, and run a dry-run agent loop with history and simple strategy self-evaluation.
+**Goal:** Finalize Version 10 by making backend tick tracking and agent startup environment-aware, exposing a clear “System Ready” status to the dashboard, adding persistent timer-start failure notifications, and synchronizing frontend refreshes to backend tick state.
 
 **Planned changes:**
-- Create a minimal app shell with a coherent, distinctive visual theme and English-only UI text.
-- Add a configuration UI for ICPSwap/KongSwap canister IDs, supported trading pairs, and pool identifiers; persist settings in a Motoko backend canister.
-- Implement backend read-only canister calls to fetch pool/price state and expose a normalized snapshot API (with timestamp, identifiers, optional liquidity/reserve fields, and raw response).
-- Build a “Market Watch” dashboard showing ICPSwap vs KongSwap snapshots side-by-side per configured pair/pool, with manual refresh, auto-refresh toggle, and per-row inline error display.
-- Add analysis parameters (fees, slippage assumption, minimum profit threshold) and compute spread %, estimated net profit after costs, and a clear signal status with reasoning; indicate reduced-confidence when liquidity/reserve data is missing.
-- Implement an “Agent” control panel with Start/Stop, a polling interval-driven decision loop (fetch → analyze → record decision), and a backend-persisted decision history view (dry-run only).
-- Add an “Execution” mode scaffold (disabled by default) requiring explicit user acknowledgement; if not implemented, show a blocked state listing missing DEX integration details (method signatures/arguments).
-- Add “Self-improvement” scaffolding: save versioned strategy parameter sets in backend and run a simple evaluation over stored history (counts by signal status at minimum).
+- Backend: Add persistent `last_update_id` that increments only when a valid live price sample is fetched and written to the ring buffer; expose an API to query `last_update_id`.
+- Backend: Implement environment-aware `startAgent` behavior (Mainnet forces live source ON + starts 10s timer + immediate fetch; Dev respects live-source toggle but ensures 10s timer is running and fetches immediately only if live source is ON).
+- Backend + Frontend: Add a status API exposing `isMainnet`, `liveSourceEnabled`, `timerRunning`, and computed `systemReady`; show “System Ready” on the dashboard as a green shield when true and a clearly not-ready state with English explanation when false.
+- Backend + Frontend: Detect/report 10-second timer start failures and surface a persistent “Canister Timeout” warning in a Notification Center UI (not only a toast).
+- Frontend: Poll backend `last_update_id` every 10 seconds and refresh tick-dependent widgets (including the 1-minute volatility chart) only when `last_update_id` changes.
+- Both: Update candid/types and React Query hooks to match Version 10 API changes and ensure clean builds for release.
 
-**User-visible outcome:** Users can configure ICPSwap/KongSwap integration settings, view and refresh normalized on-chain snapshots side-by-side, see computed spreads and arbitrage signal statuses with cost assumptions, run a dry-run agent that logs decisions over time, view decision history, and save/evaluate strategy parameter versions—while execution remains explicitly disabled unless acknowledged and implemented.
+**User-visible outcome:** The dashboard shows whether the system is ready (green shield only when on Mainnet, live source enabled, and timer running), displays a persistent “Canister Timeout” warning if the timer cannot start, and updates tick-driven charts/widgets exactly once per backend tick based on `last_update_id`.

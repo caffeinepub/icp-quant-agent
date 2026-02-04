@@ -24,11 +24,22 @@ export interface DEXConfig {
   'name' : string,
   'canisterId' : string,
 }
+export interface DEXConfigIdentifiers {
+  'icpSwapCanisterId' : [] | [string],
+  'kongSwapCanisterId' : [] | [string],
+}
 export interface DecisionEvent {
   'result' : string,
   'step' : string,
   'timestamp' : Time,
   'details' : string,
+}
+export interface LatencyMetric {
+  'stage' : string,
+  'operation' : string,
+  'timestamp' : Time,
+  'details' : string,
+  'durationNs' : bigint,
 }
 export interface PairConfig {
   'feeBps' : bigint,
@@ -36,6 +47,7 @@ export interface PairConfig {
   'baseSymbol' : string,
   'poolId' : string,
 }
+export interface PricePoint { 'timestamp' : Time, 'price' : number }
 export interface PriceSnapshot {
   'reserves' : [] | [[number, number]],
   'timestamp' : Time,
@@ -44,17 +56,86 @@ export interface PriceSnapshot {
   'pairId' : string,
   'dexName' : string,
 }
+export interface ShadowExecutionMetrics {
+  'successRate' : number,
+  'totalOpportunities' : bigint,
+  'shadowExecutionLog' : Array<TradeLogEntry>,
+  'avgSpreadCaptured' : number,
+}
+export type ShadowTradeStatus = { 'active' : null } |
+  { 'success' : null } |
+  { 'timeout' : null } |
+  { 'failed' : null };
+export interface SignalDetectionEvent {
+  'tvl' : number,
+  'estimatedReturn' : number,
+  'riskCategory' : string,
+  'fees' : number,
+  'priceDelta' : number,
+  'safeOrderSize' : number,
+  'highRisk' : boolean,
+  'signalsPerHour' : bigint,
+  'timestamp' : Time,
+  'avgPriceDeviation' : number,
+  'pairId' : string,
+}
 export type Time = bigint;
+export interface TradeLogEntry {
+  'status' : ShadowTradeStatus,
+  'resolutionReason' : [] | [string],
+  'timestamp' : Time,
+  'entryPrice' : number,
+  'exitPrice' : [] | [number],
+  'pairId' : string,
+  'realizedReturn' : [] | [number],
+}
+export interface TransformationInput {
+  'context' : Uint8Array,
+  'response' : http_request_result,
+}
+export interface TransformationOutput {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
+export interface http_header { 'value' : string, 'name' : string }
+export interface http_request_result {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
 export interface _SERVICE {
   'addDEXConfig' : ActorMethod<[string, string, Array<PairConfig>], bigint>,
+  'addLatencyMetric' : ActorMethod<[string, bigint, string, string], undefined>,
+  'addPricePoint' : ActorMethod<[number], undefined>,
+  'calculateSmartDelay' : ActorMethod<[], bigint>,
+  'detectLiveSignal' : ActorMethod<
+    [string, number, number],
+    [] | [SignalDetectionEvent]
+  >,
+  'dryRunDecision' : ActorMethod<[string, string, string, number], number>,
+  'fetchUSDTPriceFromBinance' : ActorMethod<[], number>,
   'getAllDEXConfigs' : ActorMethod<[], Array<DEXConfig>>,
+  'getAllLatencyMetrics' : ActorMethod<[], Array<LatencyMetric>>,
+  'getAllPoolPrices' : ActorMethod<[], Array<PricePoint>>,
   'getDecisionHistory' : ActorMethod<[], Array<DecisionEvent>>,
+  'getDexConfig' : ActorMethod<[], DEXConfigIdentifiers>,
+  'getPoolPrice' : ActorMethod<[], [] | [PricePoint]>,
+  'getSafeOptimizerDataset' : ActorMethod<[], Array<SignalDetectionEvent>>,
+  'getShadowExecutionMetrics' : ActorMethod<[], ShadowExecutionMetrics>,
   'getSortedDEXConfigs' : ActorMethod<[], Array<DEXConfig>>,
   'recordPriceSnapshot' : ActorMethod<[PriceSnapshot], undefined>,
   'runArbitrageAnalysis' : ActorMethod<[string], ArbitrageSignal>,
+  'runArbitrageAnalysisBetweenDEXs' : ActorMethod<
+    [string, string, string],
+    ArbitrageSignal
+  >,
   'setDEXConfigStatus' : ActorMethod<[bigint, boolean], undefined>,
+  'setDexConfig' : ActorMethod<[DEXConfigIdentifiers], undefined>,
   'startAgent' : ActorMethod<[], undefined>,
+  'startShadowTradeEvaluationTimer' : ActorMethod<[], undefined>,
   'stopAgent' : ActorMethod<[], undefined>,
+  'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
   'updateTradingPairs' : ActorMethod<[bigint, Array<PairConfig>], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;

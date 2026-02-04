@@ -1,20 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Save, AlertCircle } from 'lucide-react';
-import { useGetDEXConfigs, useAddDEXConfig, useUpdateTradingPairs } from '../hooks/useQueries';
+import { Plus, Trash2, Save, AlertCircle, RotateCcw } from 'lucide-react';
+import { useGetDEXConfigs, useAddDEXConfig, useUpdateTradingPairs, useGetDexConfigIdentifiers, useSetDexConfigIdentifiers } from '../hooks/useQueries';
 import { validateCanisterId, validatePairConfig } from '../lib/validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import type { PairConfig } from '../backend';
 
+const DEFAULT_ICPSWAP_CANISTER = 'xmiu5-jqaaa-aaaag-qbz7q-cai';
+
 export default function ConfigurationPage() {
   const { data: configs, isLoading } = useGetDEXConfigs();
+  const { data: dexConfigIds } = useGetDexConfigIdentifiers();
   const addDEXConfig = useAddDEXConfig();
   const updateTradingPairs = useUpdateTradingPairs();
+  const setDexConfigIds = useSetDexConfigIdentifiers();
 
   const [newDEX, setNewDEX] = useState({ name: '', canisterId: '' });
   const [newPair, setNewPair] = useState({
@@ -24,6 +28,15 @@ export default function ConfigurationPage() {
     feeBps: '30',
   });
   const [error, setError] = useState<string | null>(null);
+  const [icpSwapCanisterId, setIcpSwapCanisterId] = useState('');
+  const [kongSwapCanisterId, setKongSwapCanisterId] = useState('');
+
+  useEffect(() => {
+    if (dexConfigIds) {
+      setIcpSwapCanisterId(dexConfigIds.icpSwapCanisterId || '');
+      setKongSwapCanisterId(dexConfigIds.kongSwapCanisterId || '');
+    }
+  }, [dexConfigIds]);
 
   const handleAddDEX = async () => {
     setError(null);
@@ -48,6 +61,37 @@ export default function ConfigurationPage() {
       toast.success('DEX configuration added successfully');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add DEX configuration');
+    }
+  };
+
+  const handleSaveDexConfigIds = async () => {
+    setError(null);
+    
+    if (icpSwapCanisterId && !validateCanisterId(icpSwapCanisterId).valid) {
+      setError('Invalid ICPSwap canister ID');
+      return;
+    }
+    
+    if (kongSwapCanisterId && !validateCanisterId(kongSwapCanisterId).valid) {
+      setError('Invalid KongSwap canister ID');
+      return;
+    }
+
+    try {
+      await setDexConfigIds.mutateAsync({
+        icpSwapCanisterId: icpSwapCanisterId || undefined,
+        kongSwapCanisterId: kongSwapCanisterId || undefined,
+      });
+      toast.success('DEX canister IDs saved successfully');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save DEX canister IDs');
+    }
+  };
+
+  const handleResetToDefault = (field: 'icpswap' | 'kongswap') => {
+    if (field === 'icpswap') {
+      setIcpSwapCanisterId('');
+      toast.info(`ICPSwap will use default: ${DEFAULT_ICPSWAP_CANISTER}`);
     }
   };
 
@@ -99,6 +143,8 @@ export default function ConfigurationPage() {
     );
   }
 
+  const effectiveIcpSwapCanister = icpSwapCanisterId || DEFAULT_ICPSWAP_CANISTER;
+
   return (
     <div className="space-y-6">
       <div>
@@ -112,6 +158,60 @@ export default function ConfigurationPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>DEX Canister IDs</CardTitle>
+          <CardDescription>Configure ICPSwap and KongSwap canister IDs for the ckBTC/ICP pool</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="icpswap-canister">ICPSwap Canister ID</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="icpswap-canister"
+                  placeholder={`Default: ${DEFAULT_ICPSWAP_CANISTER}`}
+                  value={icpSwapCanisterId}
+                  onChange={(e) => setIcpSwapCanisterId(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleResetToDefault('icpswap')}
+                  title="Use default canister"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use default ckBTC/ICP pool: <span className="font-mono">{DEFAULT_ICPSWAP_CANISTER}</span>
+              </p>
+              {!icpSwapCanisterId && (
+                <Badge variant="secondary" className="text-xs">
+                  Using default
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="kongswap-canister">KongSwap Canister ID</Label>
+              <Input
+                id="kongswap-canister"
+                placeholder="e.g., bbbbb-bb"
+                value={kongSwapCanisterId}
+                onChange={(e) => setKongSwapCanisterId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: Configure KongSwap pool canister
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleSaveDexConfigIds} disabled={setDexConfigIds.isPending} className="mt-4">
+            <Save className="mr-2 h-4 w-4" />
+            {setDexConfigIds.isPending ? 'Saving...' : 'Save Canister IDs'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -151,7 +251,7 @@ export default function ConfigurationPage() {
           <Card key={config.id.toString()}>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle>{config.name}</CardTitle>
                   <CardDescription className="font-mono text-xs">{config.canisterId}</CardDescription>
                 </div>
@@ -203,7 +303,7 @@ export default function ConfigurationPage() {
                     onChange={(e) => setNewPair({ ...newPair, baseSymbol: e.target.value })}
                   />
                   <Input
-                    placeholder="Quote (e.g., USDT)"
+                    placeholder="Quote (e.g., ckBTC)"
                     value={newPair.quoteSymbol}
                     onChange={(e) => setNewPair({ ...newPair, quoteSymbol: e.target.value })}
                   />

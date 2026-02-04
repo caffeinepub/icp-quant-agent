@@ -1,104 +1,510 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "icp_quant_agent：面向 ICP 主网 DEX（ICPSwap/KongSwap）的量化价格感知与跨 DEX 套利 Agent 原型，具备链上状态感知、独立读取价格/池状态、判断套利机会，并最终走向自动执行/自我决策/自我进化。",
+  "projectStateVersion": 44,
+  "summary": "icp_quant_agent (\"Hyper-Canister Quantum\"): an ICP canister + React dashboard prototype for an on-chain quant/arbitrage agent architecture (Sensory Cortex → Executive Engine (dry-run) → Evolutionary Lab). The backend canister supports DEX configuration storage, snapshot/decision/latency logging, a ring-buffer for recent price points, and HTTPS outcalls (Binance + ICPSwap public info). Live ICPSwap pool sampling can be scheduled on-canister via an ICP Timer (toggle-controlled, mainnet-guarded), persisted into the ring buffer and a dedicated SignalDetectionEvent log. The frontend provides pages to configure DEX endpoints/pairs and ICPSwap/KongSwap canister IDs, switch between mock vs live data, monitor market snapshots and ckBTC/ICP ratio (price0 + tvlUSD), start/stop a dry-run agent loop, visualize pipeline/latency/decision history, and view self-improvement panels using the live signal logs as future optimizer input.",
   "existing_features": [
     {
-      "id": "feature-create-a-minimal-app-shell-for-project-icp-quant-agent-with-a-coherent-distinctive-visual-theme-colors-typography-layout-applied-consistently-across-all-screens-user-facing-ui-text-must-be-in-english",
-      "title": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
+      "id": "IF-1",
+      "title": "Motoko backend canister with migration wiring",
+      "synonyms": [
+        "backend canister",
+        "Motoko actor core",
+        "upgrade migration"
+      ],
+      "description": "Implements a Motoko actor (`backend/main.mo`) with upgrade-safe state evolution via a migration module (`backend/migration.mo`) that adds persisted DEX identifier configuration while preserving prior state.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "HTTP(S) outcalls module with response transform",
+      "synonyms": [
+        "canister HTTPS outcalls",
+        "IC.http_request wrapper"
+      ],
+      "description": "Provides `httpGetRequest`/`httpPostRequest` helpers and a `transform` function to perform management-canister HTTP requests with headers handling and cycle budgeting.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "DEX configuration storage (DEX list + trading pairs)",
+      "synonyms": [
+        "DEX registry",
+        "pair configuration"
+      ],
+      "description": "Backend supports adding DEX configs (name, canisterId) and updating per-DEX trading pairs (base/quote symbols, poolId, feeBps), and querying all or sorted configs.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "Persisted ICPSwap/KongSwap canister ID identifiers for ICP/ckBTC",
+      "synonyms": [
+        "DEX canister IDs config",
+        "icpSwapCanisterId/kongSwapCanisterId"
+      ],
+      "description": "Backend exposes `getDexConfig`/`setDexConfig` for persisting ICPSwap and KongSwap canister IDs; frontend Configuration page includes a dedicated form to set and save these identifiers with validation.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-configuration-ui-to-manage-on-chain-integration-settings-required-for-icpswap-and-kongswap-reads-per-dex-canister-ids-supported-trading-pair-identifiers-e-g-base-quote-symbols-and-any-pool-identifiers-needed-persist-these-settings-in-the-backend-canister-so-they-survive-page-reloads",
-      "title": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
+      "id": "IF-5",
+      "title": "Price snapshot recording and arbitrage analysis over snapshots",
+      "synonyms": [
+        "PriceSnapshot log",
+        "runArbitrageAnalysis"
+      ],
+      "description": "Backend can record `PriceSnapshot` entries and compute a basic spread-based arbitrage signal between ICPSwap and KongSwap (or arbitrary from/to DEX names), appending analysis events to the decision log.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Ring-buffered pool price point storage",
+      "synonyms": [
+        "PricePoint buffer",
+        "recent prices"
+      ],
+      "description": "Backend maintains a custom ring buffer for recent `PricePoint`s, supports appending points (`addPricePoint`) and retrieving the latest (`getPoolPrice`) or all buffered points (`getAllPoolPrices`).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Decision history logging and agent lifecycle events (dry-run)",
+      "synonyms": [
+        "decision log",
+        "startAgent/stopAgent"
+      ],
+      "description": "Backend records `DecisionEvent`s and exposes `getDecisionHistory`; `startAgent`/`stopAgent` append lifecycle events used by the frontend Agent page to display status and history.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Latency metrics logging and delay heuristic",
+      "synonyms": [
+        "latency log",
+        "smart delay",
+        "performance telemetry"
+      ],
+      "description": "Backend records `LatencyMetric`s (including for HTTPS outcalls) and exposes `getAllLatencyMetrics`; includes a `calculateSmartDelay` heuristic based on recorded metrics.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "React frontend app scaffold with routing and layout",
+      "synonyms": [
+        "TanStack Router app",
+        "dashboard shell"
+      ],
+      "description": "Frontend provides a multi-page dashboard using TanStack Router, with a shared layout (SideNav + branded header/footer) and route structure for Market Watch, Configuration, Agent, Execution, and Self-Improvement pages.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Tailwind + shadcn/ui integration with themed design tokens",
+      "synonyms": [
+        "UI component library",
+        "dark mode theme"
+      ],
+      "description": "Uses shadcn/ui components and Tailwind with CSS-variable theming (OKLCH) for consistent cards, tables, dialogs, badges, alerts, switches, etc., supporting dark mode.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Internet Identity authentication provider and identity-aware actor creation",
+      "synonyms": [
+        "II auth",
+        "AuthClient integration",
+        "useInternetIdentity/useActor"
+      ],
+      "description": "Implements an Internet Identity context provider for login/logout and identity persistence; `useActor` creates an authenticated or anonymous canister actor and invalidates/refetches React Query data when identity changes.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "React Query hook layer for backend API access",
+      "synonyms": [
+        "useQueries",
+        "query/mutation wrappers"
+      ],
+      "description": "Provides a comprehensive React Query hook set for DEX config management, dex identifier config, agent control, decision history, latency metrics, snapshot recording, Binance price fetch, and price point buffer operations with automatic cache invalidation.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Configuration UI for DEX endpoints, trading pairs, and canister ID validation",
+      "synonyms": [
+        "Configuration page",
+        "DEX setup"
+      ],
+      "description": "Configuration page enables adding DEX entries, adding/removing trading pairs per DEX, and setting ICPSwap/KongSwap canister IDs; includes form validation helpers for canister IDs and pair configs plus toast/error feedback.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Market Watch UI with refresh/auto-refresh and snapshot drill-down",
+      "synonyms": [
+        "market monitor",
+        "MarketSnapshotGrid",
+        "SnapshotDetailsDialog"
+      ],
+      "description": "Market Watch page renders per-pair snapshot cards for Binance/ICPSwap/KongSwap, supports manual refresh and toggleable auto-refresh, records a Binance snapshot to the backend, and provides a dialog to inspect snapshot metadata and raw response.",
       "reqIds": [
-        "REQ-2"
+        "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-build-a-frontend-market-watch-dashboard-that-shows-the-latest-snapshots-for-icpswap-and-kongswap-side-by-side-per-configured-pair-pool-including-last-updated-time-price-and-liquidity-reserve-metrics-when-available-include-manual-refresh-controls-and-an-auto-refresh-toggle-with-a-safe-polling-interval",
-      "title": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
+      "id": "IF-15",
+      "title": "Agent Control UI with pipeline status, sensory monitor, latency signals, and decision history",
+      "synonyms": [
+        "Agent page",
+        "pipeline visualization"
+      ],
+      "description": "Agent page allows starting/stopping the dry-run agent, shows HCQ pipeline stage status, visualizes latency metrics with spike detection, displays a filterable decision history table, and includes the Sensory Cortex monitor panel.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-16",
+      "title": "Sensory Cortex monitor (frontend polling + spread/volatility + buffer persistence)",
+      "synonyms": [
+        "DEX polling simulation",
+        "delta-spread monitor",
+        "arbitrage signal"
+      ],
+      "description": "When running, the Sensory Cortex panel polls every 2 seconds (simulated ICPSwap/KongSwap prices), computes delta-spread, calculates short-term volatility from buffered points, flags arbitrage viability above a spread threshold, and persists averaged price points to the backend ring buffer.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "Execution mode gating UI and blocked execution placeholder",
+      "synonyms": [
+        "execution acknowledgement",
+        "execution disabled"
+      ],
+      "description": "Execution page requires explicit risk acknowledgement before enabling execution mode UI, and shows a blocked panel listing missing DEX integration requirements (swap signatures, approvals, confirmations, error handling).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "Evolutionary Lab UI placeholders (backtesting, optimizer, strategy parameter versions)",
+      "synonyms": [
+        "self-improvement",
+        "optimizer/backtest stubs"
+      ],
+      "description": "Self-Improvement page includes placeholder panels for running backtests, proposing parameter optimizations, and managing strategy parameter versions; actions are disabled pending backend integration.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-19",
+      "title": "Live ICPSwap pool details fetch via HTTPS outcall (JSON parsing)",
+      "synonyms": [
+        "ICPSwap public info API outcall",
+        "pool details fetcher",
+        "price0+tvlUSD parsing"
+      ],
+      "description": "Backend performs HTTPS outcalls to the ICPSwap public info API pool details endpoint, parses JSON to extract `price0` and `tvlUSD`, and exposes the resulting live ratio signal to the frontend.",
       "reqIds": [
-        "REQ-4"
+        "AR-1",
+        "AR-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-cross-dex-price-deviation-and-arbitrage-signal-analysis-compute-spread-between-icpswap-and-kongswap-prices-per-pair-estimate-whether-an-opportunity-is-meaningful-by-accounting-for-configurable-fees-and-slippage-assumptions-and-output-a-clear-signal-status-e-g-no-signal-watch-actionable-with-the-reasoning-inputs-used",
-      "title": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
+      "id": "IF-20",
+      "title": "Toggle-controlled on-canister live data scheduler (ICP Timer) with mainnet guard",
+      "synonyms": [
+        "Sensory Cortex timer loop",
+        "10s sampling loop",
+        "environment guard"
+      ],
+      "description": "Backend runs a 10-second ICP Timer loop to fetch ICPSwap live data only when enabled via configuration; stops immediately when disabled; includes an environment/network guard that returns a clear status (no outcall) in non-mainnet environments.",
       "reqIds": [
-        "REQ-5"
+        "AR-2",
+        "AR-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-an-agent-control-panel-that-supports-a-prototype-decision-loop-1-fetch-snapshots-2-run-analysis-3-record-a-decision-event-what-it-would-do-and-why-include-start-stop-toggles-and-a-history-log-of-decisions-stored-in-the-backend-this-is-a-non-executing-dry-run-agent-by-default",
-      "title": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
+      "id": "IF-21",
+      "title": "Live Data Source toggle in Configuration + Market Watch binding",
+      "synonyms": [
+        "mock vs live switch",
+        "LiveDataSourceControl",
+        "ratio widget binding"
+      ],
+      "description": "Frontend includes a Configuration control to toggle between simulated/mock data and live ICPSwap HTTPS-outcall data; Market Watch ckBTC/ICP ratio widgets bind to the selected source and display live values when enabled.",
+      "reqIds": [
+        "AR-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-22",
+      "title": "SignalDetectionEvent logging for live samples and fluctuation-based detections",
+      "synonyms": [
+        "Evolutionary Lab live signal log",
+        "1-minute fluctuation",
+        "live detections"
+      ],
+      "description": "Backend persists a dedicated `SignalDetectionEvent` log for each 10s live sample (timestamp, price0, tvlUSD, computed 1-minute fluctuation) and records detection events when fluctuation crosses the configured threshold for downstream optimizer/backtesting analysis.",
+      "reqIds": [
+        "AR-2",
+        "AR-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-backend-frontend-define-tri-state-system-ready-as-is-mainnet-is-live-source-is-timer-running-expose-these-three-booleans-and-the-computed-systemready-value-in-a-backend-status-api-that-the-frontend-can-poll-on-the-dashboard-market-watch-page-display-system-ready-as-a-green-shield-icon-when-true-and-a-clearly-not-ready-state-when-false-use-english-for-any-user-facing-labels-tooltips",
+      "title": "Backend + Frontend: Define Tri-State `System_Ready` as (is_Mainnet && is_Live_Source && is_Timer_Running). Expose these three booleans and the computed `systemReady` value in a backend status API that the frontend can poll. On the Dashboard (Market Watch page), display `System Ready` as a Green Shield icon when true (and a clearly \"not ready\" state when false). Use English for any user-facing labels/tooltips.",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-provide-a-clearly-separated-execution-mode-scaffold-disabled-by-default-that-defines-the-interface-for-submitting-trades-to-dexes-but-only-enables-execution-after-an-explicit-user-acknowledgement-in-the-ui-if-execution-is-not-yet-implemented-due-to-missing-dex-details-the-ui-must-show-what-additional-information-is-required-e-g-swap-method-signatures-required-arguments",
-      "title": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "id": "feature-backend-frontend-add-timer-start-failure-handling-if-the-10-second-timer-fails-to-start-including-any-trap-error-condition-during-the-start-attempt-return-a-failure-result-from-the-relevant-backend-call-s-and-surface-a-persistent-canister-timeout-warning-in-a-notification-center-ui-in-the-frontend-not-only-as-a-transient-toast",
+      "title": "Backend + Frontend: Add timer start failure handling. If the 10-second timer fails to start (including any trap/error condition during the start attempt), return a failure result from the relevant backend call(s) and surface a persistent \"Canister Timeout\" warning in a Notification Center UI in the frontend (not only as a transient toast).",
       "reqIds": [
         "REQ-7"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-self-improvement-scaffolding-module-allow-storing-strategy-versions-and-tunable-parameters-thresholds-polling-interval-slippage-assumptions-with-simple-backtesting-over-the-recorded-decision-history-e-g-evaluate-how-many-historical-snapshots-would-have-been-actionable-this-is-a-direction-setting-prototype-no-external-ml-llm",
-      "title": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
+      "id": "feature-frontend-update-tick-synchronization-behavior-to-align-ui-refresh-cadence-with-the-backend-10-second-timer-by-polling-the-backend-last-update-id-on-a-10-second-interval-and-using-it-as-the-source-of-truth-for-when-to-refresh-tick-dependent-widgets-including-the-1-minute-volatility-chart-so-the-dashboard-reflects-the-exact-backend-tick-state",
+      "title": "Frontend: Update tick synchronization behavior to align UI refresh cadence with the backend 10-second timer by polling the backend `last_update_id` on a 10-second interval and using it as the source of truth for when to refresh tick-dependent widgets (including the 1-minute volatility chart) so the dashboard reflects the exact backend tick state.",
       "reqIds": [
         "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-finalize-version-10-for-release-ensure-candid-type-definitions-and-react-query-hooks-are-updated-to-match-any-backend-api-signature-changes-introduced-by-version-10-status-apis-last-update-id-start-results-and-ensure-the-app-builds-cleanly-and-is-ready-to-deploy-as-version-10",
+      "title": "Finalize Version 10 for release: ensure candid/type definitions and React Query hooks are updated to match any backend API signature changes introduced by Version 10 (status APIs, last_update_id, start results), and ensure the app builds cleanly and is ready to deploy as \"Version 10\".",
+      "reqIds": [
+        "REQ-9"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-1",
-      "summary": "从 ICP 链上独立读取 ICPSwap/KongSwap 的价格与流动性池状态（真实链上状态感知）",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "跨 DEX 价格偏差分析：判断是否存在具备套利意义的机会（考虑滑点/费用等）",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Agent 自动执行与自我决策能力（在识别到机会后可自动下单/执行）",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
       "id": "AR-4",
-      "summary": "Agent 自我进化能力（策略迭代/参数自适应/学习模块的方向）",
+      "summary": "Enrich SignalDetectionEvent with Estimated_Return (Price_Delta% minus 0.6% fees) and Max_Safe_Order_Size (tvlUSD * 0.2%) fields",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Evolutionary Lab UI: display last 20 live detections with timestamp, fluctuation %, and calculated safe order size",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Self-correction risk flagging: mark live detections as High Risk when >5 signals in 1h and tvlUSD < $50k to prevent illiquid trading",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-7",
-      "summary": "Implement backend read-only on-chain state sensing for ICPSwap and KongSwap by calling their canisters to fetch current pool/price state (as supported by the configured identifiers). Expose a backend API that returns normalized snapshots (timestamp, DEX name, pair/pool id, price fields, liquidity/reserve fields when available, and raw response for debugging).",
+      "summary": "Refine signal detection baseline: compute Price_Delta% vs moving average of last 10 ICPSwap samples; trigger only when deviation > 0.5%",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Contextual risk guard: compute \"5 signals/hour\" rate per current pool/pair (not global) to determine elevated volatility risk",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Evolutionary Lab UI: add 'Red-Risk' tag for High-Risk detections (tvlUSD < $50k and/or high-frequency volatility) while still displaying them in the last-20 list",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Optimizer filtering: exclude High-Risk SignalDetectionEvents from the On-Chain Optimizer training dataset while still logging them",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Shadow Execution: when a SignalDetectionEvent is Safe (not High-Risk), create a virtual shadow swap using entry price from the signal and position size = Max_Safe_Order_Size",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Shadow Execution evaluation: track post-signal price for 5 minutes; mark SUCCESS if target Estimated_Return reached, FAILED if price drops by 0.3% stop loss",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Backtesting Engine integration: feed shadow trade success/failure outcomes back into Self-Improvement (Evolutionary Lab) backtesting dataset",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Evolutionary Lab UI: populate 'Expected Metrics' (total opportunities, success rate, avg spread captured) computed from Shadow Execution outcomes",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Sync frontend Market Watch auto-refresh interval with backend 10s ICP Timer so each live price tick is reflected in the 1-minute volatility chart",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Log and display 'Sub-threshold Observations' in Evolutionary Lab for spread/ratio history even when arbitrage viability signal is FALSE (below threshold)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Agent page: clicking 'Start Agent' should immediately trigger the Sense → Analyze → Risk Sandbox pipeline in dry-run mode (tied to existing live/mock data source)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Expected Metrics cards: update in near real-time whenever a shadow trade resolves (SUCCESS/FAILED/timeout), including timeouts and profit-target hits",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Unified Start Agent master sequence: force Live Data Source ON, start the 10s backend timer, and trigger an immediate initial ICPSwap price fetch",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Backend tick synchronization: add last_update_id to Sensory Cortex and have the UI poll it every 10s to reflect exact backend tick state",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Refine Sub-threshold Observation logging (<1.5%): new log category with timestamp+price; exclude from Shadow Execution and from the Safe Optimizer Dataset; gray-out in Self-Improvement UI",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Finalize Mainnet guard readiness indicator: show 'System Ready' only when running on IC Mainnet (otherwise dev/status message)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Refine last_update_id semantics: increment ONLY when a valid live price sample is successfully fetched and stored in the ring buffer",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Refine Start Agent logic by environment: on Mainnet force Live Data Source ON and start timer; on Dev respect toggle but ensure timer is running",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Tri-state System_Ready guard: compute as (is_Mainnet && is_Live_Source && is_Timer_Running) and display as a dashboard status indicator (green shield icon)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-26",
+      "summary": "Add timer start failure error handling: if the 10s backend timer fails to start, surface a 'Canister Timeout' warning in a Notification Center UI",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Backend: Add a persistent `last_update_id` tick counter for the live price sampling buffer, and increment `last_update_id` ONLY when a valid live price sample is successfully fetched and stored in the ring buffer (do not increment on timer ticks that fail, return invalid data, or do not result in a buffer write). Expose a query API to read `last_update_id` for frontend synchronization.",
       "reqIds": [
-        "REQ-3"
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Backend: Implement Smart Start logic for `startAgent` based on environment. If Environment == Mainnet: `startAgent` must force Live Data Source = ON and start the 10-second timer (and trigger an immediate initial fetch). If Environment == Dev: `startAgent` must respect the current Live Data Source toggle state but still ensure the 10-second timer is running (and trigger an immediate initial fetch if the live source is ON).",
+      "reqIds": [
+        "REQ-5"
       ],
       "status": "pending"
     }
   ],
-  "architectural_notes": [],
-  "known_issues": [],
+  "architectural_notes": [
+    "Backend is a single Motoko actor exposing a Candid API; state is held in in-memory Map/List structures with an explicit migration module wired via `(with migration = Migration.run)` for upgrade-safe schema evolution.",
+    "Backend includes a dedicated HTTP outcalls module (`backend/http-outcalls/outcall.mo`) using the management canister `http_request` API with a response transform function.",
+    "Backend uses a custom ring buffer implementation to store recent `PricePoint` values and expose both the latest and all buffered points.",
+    "Frontend is React (Vite) with Tailwind CSS and shadcn/ui primitives; theming uses CSS variables (OKLCH) with class-based dark mode.",
+    "Routing uses TanStack Router; server state and actor calls use TanStack React Query (queries + mutations with cache invalidation).",
+    "Internet Identity authentication is encapsulated in a context provider (`InternetIdentityProvider`); actor creation is identity-aware and triggers invalidation/refetch of dependent queries when identity changes.",
+    "UI is organized into feature pages (Market Watch, Configuration, Agent, Execution, Self-Improvement) and composable panels (pipeline status, latency signals, sensory cortex monitor, snapshot drill-down, etc.).",
+    "Backend includes an HTTPS outcall-based Sensory Cortex fetcher for ICPSwap public info API (pool details), parsing JSON to extract `price0` and `tvlUSD` and exposing live ratio signals to the frontend.",
+    "Backend Sensory Cortex uses an ICP Timer scheduler to perform ICPSwap HTTPS outcalls every 10 seconds and persist samples into the on-canister ring buffer.",
+    "Frontend Configuration includes a 'Live Data Source' toggle to switch between mock/simulated data and live ICPSwap HTTPS-outcall data; Market Watch binds to the selected source.",
+    "Live data fetching lifecycle is toggle-controlled: start the 10s HTTPS outcall loop only when Live Data Source is enabled; cancel/stop immediately when disabled.",
+    "HTTPS outcalls are guarded by environment/network: non-mainnet environments return a clear status message (e.g., 'Live data unavailable in dev environment') and do not attempt ICPSwap API fetches.",
+    "Evolutionary Lab persists a dedicated `SignalDetectionEvent` structure storing each 10s live sample (timestamp, price0, tvlUSD, computed 1-minute fluctuation) and detection events for optimizer quality analysis.",
+    "Extend SignalDetectionEvent to include derived profitability and risk metrics: Estimated_Return = (fluctuation% - 0.6% fees) and Max_Safe_Order_Size = tvlUSD * 0.2%, plus a HighRisk flag based on recent signal density and TVL threshold.",
+    "Evolutionary Lab (Self-Improvement) UI should query and render the last 20 live detections from the dedicated SignalDetectionEvent history, including timestamp, fluctuation %, safe order size, and HighRisk marker.",
+    "Signal detection should use a 10-sample moving average baseline for Price_Delta% (deviation from MA10), with signal trigger threshold at 0.5%.",
+    "High-risk evaluation and \"5 signals/hour\" rate-limiting must be computed per pool/pair context, not globally.",
+    "High-Risk detections remain logged and visible in Evolutionary Lab but must be excluded from the On-Chain Optimizer dataset (training/analysis input).",
+    "Introduce a 'Shadow Execution' (paper trading) pipeline driven by Safe SignalDetectionEvents to generate outcome labels and performance metrics for Evolutionary Lab/Backtesting.",
+    "Shadow execution rules: 5-minute evaluation window; take-profit at Estimated_Return target; stop-loss at -0.3%; use virtual position size Max_Safe_Order_Size and entry price at signal time.",
+    "Shadow Execution V8 decision: evaluate each Safe SignalDetectionEvent by creating a backend ShadowTrade instance and monitoring ICPSwap price via ICP Timer every 10s for 5 minutes.",
+    "Shadow Execution outcome rules: SUCCESS if price >= entry * (1 + Estimated_Return); FAILED if price <= entry * (1 - 0.3%) stop-loss OR timeout at 5 minutes without hitting target.",
+    "Metrics definition refinement: Avg spread captured is the mean realized return across ALL shadow trades, including negative returns from FAILED or timed-out trades (not just successes).",
+    "UI integration refinement: stream Shadow Execution outcomes into Evolutionary Lab 'Expected Metrics' and append to Backtesting Engine log in the Self-Improvement view. (Requires backend query endpoints/polling to reflect updates in near real-time.)",
+    "Start Agent should act as a master controller that can force Live Data Source ON, start/stop the backend 10s timer, and perform an immediate initial fetch to avoid waiting for the first tick.",
+    "Introduce a monotonic Sensory Cortex tick identifier (last_update_id) that the UI polls to synchronize dashboard updates to backend timer ticks rather than independent refresh cadence.",
+    "Sub-threshold Observations (<1.5% spread/viability) are logged as a separate category for history/visualization but must be excluded from Shadow Execution and any Optimizer training dataset; UI should visually de-emphasize them (e.g., gray styling).",
+    "Mainnet guard should drive an explicit readiness state in the UI/backend: 'System Ready' only on IC mainnet; non-mainnet returns a clear dev-environment status.",
+    "Refine Sensory Cortex tick synchronization: last_update_id increments only on successful live fetch+persist, not on mere timer ticks.",
+    "Start Agent environment-aware behavior: Mainnet forces Live Data Source ON and starts timer; Dev respects toggle but ensures timer is running.",
+    "Define System_Ready as a tri-state readiness predicate (is_Mainnet && is_Live_Source && is_Timer_Running) and surface it in the dashboard UI as a readiness indicator.",
+    "Add explicit error handling for timer start failures and surface 'Canister Timeout' warnings in a Notification Center."
+  ],
+  "known_issues": [
+    "Backend `fetchUSDTPriceFromBinance` performs an HTTPS outcall but returns a hard-coded price (3.5) and does not parse the HTTP response body.",
+    "MarketWatchPage currently records/updates a Binance snapshot locally and in the backend, but does not fetch and display backend-stored snapshots nor populate ICPSwap/KongSwap snapshots in the UI.",
+    "Agent start/stop in the backend only appends decision log events; there is no autonomous on-canister recurring task/heartbeat driving sensing or analysis.",
+    "Core mutating backend methods (e.g., setDexConfig, addDEXConfig, updateTradingPairs, recordPriceSnapshot, addPricePoint) have no access control; any caller can modify global state.",
+    "Logs and snapshots are appended to unbounded lists (`priceSnapshots`, `decisionLog`, `latencyLog`) with no retention policy, which can cause unbounded memory growth.",
+    "`setDEXConfigStatus` marks a DEX inactive by overwriting `canisterId` with an empty string, losing the original value rather than tracking an explicit status flag.",
+    "Self-Improvement panels (backtesting, optimizer, strategy parameter versioning) and Execution mode are UI placeholders with disabled actions; backend APIs are not implemented.",
+    "Live ICPSwap HTTPS-outcall sampling requires sufficient cycles and may be impacted by upstream API rate limits/availability; consider backoff and explicit cycle budgeting telemetry."
+  ],
   "isFixRequest": false,
   "gameProjectType": "none",
   "projectName": "icp_quant_agent",
-  "clarification_mode": "instant",
+  "clarification_mode": "thinking",
   "clarification_rounds": 0
 }

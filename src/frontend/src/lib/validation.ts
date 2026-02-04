@@ -1,6 +1,7 @@
 export function validateCanisterId(canisterId: string): { valid: boolean; error?: string } {
+  // Allow empty canister ID (will use default)
   if (!canisterId || canisterId.trim().length === 0) {
-    return { valid: false, error: 'Canister ID cannot be empty' };
+    return { valid: true };
   }
 
   // Basic validation: should contain alphanumeric characters and hyphens

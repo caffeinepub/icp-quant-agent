@@ -1,168 +1,126 @@
 {
   "kind": "build_request",
-  "title": "icp_quant_agent: On-chain DEX state sensing + cross-DEX arbitrage signal prototype (ICPSwap/KongSwap)",
+  "title": "Version 10 Final Build: Smart Tick ID, Environment-Aware Start, System Ready Guard, and Timer Failure Notifications",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-1",
-      "text": "Create a minimal app shell for project \"icp_quant_agent\" with a coherent, distinctive visual theme (colors, typography, layout) applied consistently across all screens. User-facing UI text must be in English.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "项目名称：icp_quant_agent，一个面向 **ICP 主网 DEX（ICPSwap / KongSwap）** 的量化价格感知与套利 Agent 原型。"
-        ]
-      },
-      "acceptanceCriteria": [
-        "App renders a clean dashboard layout with consistent styling across header/navigation/content areas",
-        "All visible UI text is English",
-        "Theme does not default to a generic blue/purple palette unless explicitly chosen as part of the defined theme"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add a configuration UI to manage on-chain integration settings required for ICPSwap and KongSwap reads: per-DEX canister IDs, supported trading pair identifiers (e.g., base/quote symbols), and any pool identifiers needed. Persist these settings in the backend canister so they survive page reloads.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "能独立从链上读取价格 / 池子状态"
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can add/edit/remove DEX endpoints/settings from the UI",
-        "Settings are stored in the Motoko backend and are restored after refresh",
-        "Validation prevents saving empty/invalid canister ID strings"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Implement backend read-only on-chain state sensing for ICPSwap and KongSwap by calling their canisters to fetch current pool/price state (as supported by the configured identifiers). Expose a backend API that returns normalized snapshots (timestamp, DEX name, pair/pool id, price fields, liquidity/reserve fields when available, and raw response for debugging).",
+      "id": "REQ-4",
+      "text": "Backend: Add a persistent `last_update_id` tick counter for the live price sampling buffer, and increment `last_update_id` ONLY when a valid live price sample is successfully fetched and stored in the ring buffer (do not increment on timer ticks that fail, return invalid data, or do not result in a buffer write). Expose a query API to read `last_update_id` for frontend synchronization.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "对 ICP 链上真实状态有感知能力 的 Agent",
-          "能独立从链上读取价格 / 池子状态"
+          "Smart ID Increment: Update last_update_id ONLY when a valid price is successfully fetched and stored in the buffer."
         ]
       },
       "acceptanceCriteria": [
-        "Backend provides query/update methods to fetch and return a normalized snapshot for each configured DEX/pool",
-        "Snapshot includes a timestamp and the DEX/pair identity used for the request",
-        "If a call fails (bad canister id / unsupported pool / trap), backend returns an error object that the frontend can display without crashing"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Build a frontend \"Market Watch\" dashboard that shows the latest snapshots for ICPSwap and KongSwap side-by-side per configured pair/pool, including last updated time, price, and liquidity/reserve metrics when available. Include manual refresh controls and an auto-refresh toggle with a safe polling interval.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-2"
-        ],
-        "quotes": [
-          "能独立从链上读取价格 / 池子状态"
-        ]
-      },
-      "acceptanceCriteria": [
-        "User can see both DEX snapshots for the same configured pair/pool on one screen",
-        "Manual refresh triggers a new backend fetch and updates the UI",
-        "Auto-refresh can be enabled/disabled and does not freeze the UI",
-        "Errors are shown inline per DEX/pool row"
+        "A new backend query returns the current `last_update_id`.",
+        "`last_update_id` increases by exactly 1 only when a live sample is validated and written to the buffer.",
+        "If a live fetch fails or produces invalid price data and the buffer is not updated, `last_update_id` does not change."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Implement cross-DEX price deviation and arbitrage-signal analysis: compute spread (%) between ICPSwap and KongSwap prices per pair, estimate whether an opportunity is meaningful by accounting for configurable fees and slippage assumptions, and output a clear signal status (e.g., No Signal / Watch / Actionable) with the reasoning inputs used.",
-      "target": "both",
+      "text": "Backend: Implement Smart Start logic for `startAgent` based on environment. If Environment == Mainnet: `startAgent` must force Live Data Source = ON and start the 10-second timer (and trigger an immediate initial fetch). If Environment == Dev: `startAgent` must respect the current Live Data Source toggle state but still ensure the 10-second timer is running (and trigger an immediate initial fetch if the live source is ON).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "可判断跨 DEX 价格偏差是否具备套利意义（考虑滑点/费用等）"
+          "Smart Start Logic: > - If Environment == Mainnet: Start Agent forces Live_Data_Source = ON and starts the Timer.\n\nIf Environment == Dev: Start Agent respects current toggle but ensures Timer is running."
         ]
       },
       "acceptanceCriteria": [
-        "User can configure analysis parameters: fee rates per DEX (or combined), slippage tolerance/assumption, and minimum profit threshold",
-        "For each pair/pool, UI displays spread %, estimated net profit after costs, and a signal status",
-        "Signal computation is deterministic given the same inputs and snapshots",
-        "When required liquidity/reserve data is unavailable, UI clearly indicates reduced-confidence estimation rather than silently producing numbers"
+        "On Mainnet, calling `startAgent` results in Live Data Source being enabled and the timer running, regardless of prior toggle state.",
+        "On Dev, calling `startAgent` does not override the Live Data Source enabled/disabled setting, but does ensure the timer is running.",
+        "On Mainnet, `startAgent` triggers an immediate initial fetch attempt as part of the start sequence."
       ]
     },
     {
       "id": "REQ-6",
-      "text": "Add an \"Agent\" control panel that supports a prototype decision loop: (1) fetch snapshots, (2) run analysis, (3) record a decision event (what it would do and why). Include Start/Stop toggles and a history log of decisions stored in the backend. This is a non-executing (dry-run) agent by default.",
+      "text": "Backend + Frontend: Define Tri-State `System_Ready` as (is_Mainnet && is_Live_Source && is_Timer_Running). Expose these three booleans and the computed `systemReady` value in a backend status API that the frontend can poll. On the Dashboard (Market Watch page), display `System Ready` as a Green Shield icon when true (and a clearly \"not ready\" state when false). Use English for any user-facing labels/tooltips.",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "最终的icp_quant_agent能具有自动执行 / 自我决策 / 自我进化"
+          "Tri-State Ready Guard: Define System_Ready as (is_Mainnet && is_Live_Source && is_Timer_Running). Display this as a 'Green Shield' icon on the Dashboard."
         ]
       },
       "acceptanceCriteria": [
-        "User can start and stop the agent loop from the UI",
-        "Agent loop produces decision events at the chosen interval and stores them in backend history",
-        "Decision history is viewable in the UI with timestamp, inputs (spread/costs), and resulting status",
-        "Default mode is dry-run (no swaps submitted)"
+        "Backend exposes `isMainnet`, `liveSourceEnabled`, `timerRunning`, and `systemReady` in a single status response.",
+        "Dashboard shows a green shield icon only when all three conditions are true.",
+        "Dashboard provides an English tooltip or label that explains which condition(s) are missing when not ready."
       ]
     },
     {
       "id": "REQ-7",
-      "text": "Provide a clearly separated \"Execution\" mode scaffold (disabled by default) that defines the interface for submitting trades to DEXes, but only enables execution after an explicit user acknowledgement in the UI. If execution is not yet implemented due to missing DEX details, the UI must show what additional information is required (e.g., swap method signatures, required arguments).",
+      "text": "Backend + Frontend: Add timer start failure handling. If the 10-second timer fails to start (including any trap/error condition during the start attempt), return a failure result from the relevant backend call(s) and surface a persistent \"Canister Timeout\" warning in a Notification Center UI in the frontend (not only as a transient toast).",
       "target": "both",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "在识别到机会后可自动下单/执行"
+          "Error Handling: If the 10s Timer fails to start, surface a 'Canister Timeout' warning in the Notification Center."
         ]
       },
       "acceptanceCriteria": [
-        "Execution controls are disabled by default and require an explicit acknowledgement step to enable",
-        "If execution is not implemented, the UI shows a blocked state and a list of required integration details rather than failing silently",
-        "No trade submission occurs without explicit enablement"
+        "Backend start flow detects and reports timer start failure without silently succeeding.",
+        "Frontend renders a Notification Center area that lists active warnings.",
+        "When timer start fails, a persistent warning labeled exactly \"Canister Timeout\" appears in the Notification Center until cleared or the condition is resolved."
       ]
     },
     {
       "id": "REQ-8",
-      "text": "Add a \"Self-improvement\" scaffolding module: allow storing strategy versions and tunable parameters (thresholds, polling interval, slippage assumptions) with simple backtesting over the recorded decision history (e.g., evaluate how many historical snapshots would have been 'Actionable'). This is a direction-setting prototype (no external ML/LLM).",
-      "target": "both",
+      "text": "Frontend: Update tick synchronization behavior to align UI refresh cadence with the backend 10-second timer by polling the backend `last_update_id` on a 10-second interval and using it as the source of truth for when to refresh tick-dependent widgets (including the 1-minute volatility chart) so the dashboard reflects the exact backend tick state.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-2"
+          "msg-5"
         ],
         "quotes": [
-          "自我进化能力（策略迭代/参数自适应/学习模块的方向）"
+          "Execute Version 10 Final Build with high-fidelity logic:"
         ]
       },
       "acceptanceCriteria": [
-        "User can save named strategy parameter sets with versioning in the backend",
-        "UI can run an evaluation over stored decision history using a selected strategy set and display summary metrics (counts by signal status at minimum)",
-        "No external services are used for learning; all logic is local to the app"
+        "Frontend polls `last_update_id` every 10 seconds.",
+        "Tick-dependent UI refreshes are keyed off changes to `last_update_id` (no extra intermediate refreshes that imply ticks that did not occur).",
+        "The 1-minute volatility chart updates once per backend tick when live sampling is active."
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "text": "Finalize Version 10 for release: ensure candid/type definitions and React Query hooks are updated to match any backend API signature changes introduced by Version 10 (status APIs, last_update_id, start results), and ensure the app builds cleanly and is ready to deploy as \"Version 10\".",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Finalize and Deploy Version 10."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Frontend compiles with no TypeScript errors after backend API changes.",
+        "Backend compiles with no Motoko errors and candid matches frontend bindings.",
+        "All new Version 10 behaviors (Smart ID increment, Smart Start logic, System Ready guard, Canister Timeout notification, 10s tick sync) are verifiable via the UI."
       ]
     }
   ],
   "constraints": [
-    "Use a single Motoko actor in backend/main.mo for all backend logic",
-    "Do not modify any frontend paths listed as immutable in SYSTEM_CONTEXT",
-    "No external databases or third-party auth providers; use Internet Identity only if authentication is added later",
-    "User-facing text must be English"
+    "Backend must remain a single-actor Motoko canister with all logic in backend/main.mo; add backend/migration.mo only if existing stable state requires migration.",
+    "Do not edit any files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Guaranteeing profitable arbitrage or providing financial advice",
-    "Production-grade automated trading with real funds enabled by default",
-    "Integrations with non-ICP DEXes or off-chain exchanges",
-    "Real-time streaming via WebSockets (use polling only)"
+    "Implementing real trade execution (non-dry-run) is out of scope.",
+    "Adding third-party authentication providers beyond Internet Identity is out of scope.",
+    "Adding external databases or off-canister storage is out of scope."
   ],
   "imageRequirements": {
     "required": [],

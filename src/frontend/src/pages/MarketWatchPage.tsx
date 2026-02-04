@@ -1,22 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
-import { useGetDEXConfigs } from '../hooks/useQueries';
+import { RefreshCw, Database } from 'lucide-react';
+import { useGetDEXConfigs, useFetchBinancePrice, useRecordSnapshot } from '../hooks/useQueries';
 import AutoRefreshControl from '../components/AutoRefreshControl';
+import MarketSnapshotGrid from '../components/MarketSnapshotGrid';
+import CkBtcIcpRatioWidget from '../components/CkBtcIcpRatioWidget';
+import SystemReadyIndicator from '../components/SystemReadyIndicator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import type { PriceSnapshot } from '../backend';
 
 export default function MarketWatchPage() {
   const { data: configs, isLoading, refetch } = useGetDEXConfigs();
+  const fetchBinance = useFetchBinancePrice();
+  const recordSnapshot = useRecordSnapshot();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
-    await refetch();
+    try {
+      await refetch();
+      
+      // Fetch Binance price and create snapshot
+      const binancePrice = await fetchBinance.mutateAsync();
+      const binanceSnapshot: PriceSnapshot = {
+        timestamp: BigInt(Date.now() * 1_000_000),
+        dexName: 'Binance',
+        pairId: 'ICP/ckBTC',
+        price: binancePrice,
+        reserves: undefined,
+        rawResponse: JSON.stringify({ symbol: 'ICPUSDT', price: binancePrice }),
+      };
+      
+      // Record to backend and update local state
+      await recordSnapshot.mutateAsync(binanceSnapshot);
+      setSnapshots(prev => {
+        const filtered = prev.filter(s => !(s.dexName === 'Binance' && s.pairId === 'ICP/ckBTC'));
+        return [...filtered, binanceSnapshot];
+      });
+      
+      toast.success('Market data refreshed');
+    } catch (err) {
+      toast.error('Failed to refresh market data');
+    }
     setTimeout(() => setIsRefreshing(false), 500);
   };
+
+  useEffect(() => {
+    if (autoRefresh) {
+      handleManualRefresh();
+    }
+  }, [autoRefresh]);
 
   if (isLoading) {
     return (
@@ -33,9 +71,10 @@ export default function MarketWatchPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Market Watch</h2>
-          <p className="text-muted-foreground">Real-time DEX price monitoring</p>
+          <p className="text-muted-foreground">Sensory Cortex: Multi-source price monitoring</p>
         </div>
         <div className="flex items-center gap-3">
+          <SystemReadyIndicator />
           <AutoRefreshControl enabled={autoRefresh} onToggle={setAutoRefresh} onRefresh={handleManualRefresh} />
           <Button onClick={handleManualRefresh} disabled={isRefreshing} variant="outline">
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -43,6 +82,17 @@ export default function MarketWatchPage() {
           </Button>
         </div>
       </div>
+
+      <Alert>
+        <Database className="h-4 w-4" />
+        <AlertDescription>
+          Real-time snapshots from Binance (HTTPS outcalls), ICPSwap, and KongSwap. Each source is monitored
+          independently with raw response debugging available.
+        </AlertDescription>
+      </Alert>
+
+      {/* New ckBTC/ICP Ratio Widget */}
+      <CkBtcIcpRatioWidget />
 
       {!hasPairs ? (
         <Alert>
@@ -54,41 +104,12 @@ export default function MarketWatchPage() {
         <div className="space-y-4">
           {configs?.map((config) =>
             config.tradingPairs.map((pair, idx) => (
-              <Card key={`${config.id}-${idx}`}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl">
-                        {pair.baseSymbol}/{pair.quoteSymbol}
-                      </CardTitle>
-                      <CardDescription>Pool: {pair.poolId}</CardDescription>
-                    </div>
-                    <Badge variant="outline">{config.name}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Price</p>
-                      <p className="text-2xl font-bold">--</p>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <TrendingUp className="h-4 w-4" />
-                        <span>Awaiting data</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Reserves</p>
-                      <p className="text-lg font-semibold">--</p>
-                      <p className="text-xs text-muted-foreground">Liquidity data unavailable</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Last Updated</p>
-                      <p className="text-lg font-semibold">--</p>
-                      <p className="text-xs text-muted-foreground">No snapshots recorded</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <MarketSnapshotGrid
+                key={`${config.id}-${idx}`}
+                pair={pair}
+                dexName={config.name}
+                snapshots={snapshots}
+              />
             ))
           )}
         </div>
