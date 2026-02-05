@@ -34,6 +34,7 @@ export interface DecisionEvent {
   'timestamp' : Time,
   'details' : string,
 }
+export interface EvoLabRun { 'timestamp' : Time, 'profit' : number }
 export interface LatencyMetric {
   'stage' : string,
   'operation' : string,
@@ -120,10 +121,12 @@ export interface _SERVICE {
   'getAllPoolPrices' : ActorMethod<[], Array<PricePoint>>,
   'getDecisionHistory' : ActorMethod<[], Array<DecisionEvent>>,
   'getDexConfig' : ActorMethod<[], DEXConfigIdentifiers>,
+  'getEvolutionaryLabRunHistory' : ActorMethod<[], Array<EvoLabRun>>,
   'getPoolPrice' : ActorMethod<[], [] | [PricePoint]>,
   'getSafeOptimizerDataset' : ActorMethod<[], Array<SignalDetectionEvent>>,
   'getShadowExecutionMetrics' : ActorMethod<[], ShadowExecutionMetrics>,
   'getSortedDEXConfigs' : ActorMethod<[], Array<DEXConfig>>,
+  'recordEvolutionaryLabRun' : ActorMethod<[number], undefined>,
   'recordPriceSnapshot' : ActorMethod<[PriceSnapshot], undefined>,
   'runArbitrageAnalysis' : ActorMethod<[string], ArbitrageSignal>,
   'runArbitrageAnalysisBetweenDEXs' : ActorMethod<

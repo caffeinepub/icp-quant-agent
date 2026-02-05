@@ -17,6 +17,10 @@ export interface TransformationOutput {
     headers: Array<http_header>;
 }
 export type Time = bigint;
+export interface EvoLabRun {
+    timestamp: Time;
+    profit: number;
+}
 export interface DecisionEvent {
     result: string;
     step: string;
@@ -109,18 +113,6 @@ export enum ShadowTradeStatus {
     timeout = "timeout",
     failed = "failed"
 }
-export interface SystemStatus {
-    isMainnet: boolean;
-    liveSourceEnabled: boolean;
-    timerRunning: boolean;
-    systemReady: boolean;
-    lastUpdateId: bigint;
-}
-export interface StartAgentResult {
-    success: boolean;
-    timerStarted: boolean;
-    errorMessage?: string;
-}
 export interface backendInterface {
     addDEXConfig(name: string, canisterId: string, tradingPairs: Array<PairConfig>): Promise<bigint>;
     addLatencyMetric(operation: string, durationNs: bigint, stage: string, details: string): Promise<void>;
@@ -134,10 +126,12 @@ export interface backendInterface {
     getAllPoolPrices(): Promise<Array<PricePoint>>;
     getDecisionHistory(): Promise<Array<DecisionEvent>>;
     getDexConfig(): Promise<DEXConfigIdentifiers>;
+    getEvolutionaryLabRunHistory(): Promise<Array<EvoLabRun>>;
     getPoolPrice(): Promise<PricePoint | null>;
     getSafeOptimizerDataset(): Promise<Array<SignalDetectionEvent>>;
     getShadowExecutionMetrics(): Promise<ShadowExecutionMetrics>;
     getSortedDEXConfigs(): Promise<Array<DEXConfig>>;
+    recordEvolutionaryLabRun(profit: number): Promise<void>;
     recordPriceSnapshot(snapshot: PriceSnapshot): Promise<void>;
     runArbitrageAnalysis(pairId: string): Promise<ArbitrageSignal>;
     runArbitrageAnalysisBetweenDEXs(fromDEX: string, toDEX: string, pairId: string): Promise<ArbitrageSignal>;
@@ -148,6 +142,4 @@ export interface backendInterface {
     stopAgent(): Promise<void>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
     updateTradingPairs(dexId: bigint, newTradingPairs: Array<PairConfig>): Promise<void>;
-    getSystemStatus(): Promise<SystemStatus>;
-    startAgentV10(): Promise<StartAgentResult>;
 }

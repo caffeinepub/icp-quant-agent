@@ -1,126 +1,111 @@
 {
   "kind": "build_request",
-  "title": "Version 10 Final Build: Smart Tick ID, Environment-Aware Start, System Ready Guard, and Timer Failure Notifications",
-  "priority": "normal",
+  "title": "Version 11.1 Backend: Triangular Shadow Arbitrage Engine (100 ICP Notional, ICPSwap Pools)",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-4",
-      "text": "Backend: Add a persistent `last_update_id` tick counter for the live price sampling buffer, and increment `last_update_id` ONLY when a valid live price sample is successfully fetched and stored in the ring buffer (do not increment on timer ticks that fail, return invalid data, or do not result in a buffer write). Expose a query API to read `last_update_id` for frontend synchronization.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Smart ID Increment: Update last_update_id ONLY when a valid price is successfully fetched and stored in the buffer."
-        ]
-      },
-      "acceptanceCriteria": [
-        "A new backend query returns the current `last_update_id`.",
-        "`last_update_id` increases by exactly 1 only when a live sample is validated and written to the buffer.",
-        "If a live fetch fails or produces invalid price data and the buffer is not updated, `last_update_id` does not change."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Backend: Implement Smart Start logic for `startAgent` based on environment. If Environment == Mainnet: `startAgent` must force Live Data Source = ON and start the 10-second timer (and trigger an immediate initial fetch). If Environment == Dev: `startAgent` must respect the current Live Data Source toggle state but still ensure the 10-second timer is running (and trigger an immediate initial fetch if the live source is ON).",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Smart Start Logic: > - If Environment == Mainnet: Start Agent forces Live_Data_Source = ON and starts the Timer.\n\nIf Environment == Dev: Start Agent respects current toggle but ensures Timer is running."
-        ]
-      },
-      "acceptanceCriteria": [
-        "On Mainnet, calling `startAgent` results in Live Data Source being enabled and the timer running, regardless of prior toggle state.",
-        "On Dev, calling `startAgent` does not override the Live Data Source enabled/disabled setting, but does ensure the timer is running.",
-        "On Mainnet, `startAgent` triggers an immediate initial fetch attempt as part of the start sequence."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Backend + Frontend: Define Tri-State `System_Ready` as (is_Mainnet && is_Live_Source && is_Timer_Running). Expose these three booleans and the computed `systemReady` value in a backend status API that the frontend can poll. On the Dashboard (Market Watch page), display `System Ready` as a Green Shield icon when true (and a clearly \"not ready\" state when false). Use English for any user-facing labels/tooltips.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Tri-State Ready Guard: Define System_Ready as (is_Mainnet && is_Live_Source && is_Timer_Running). Display this as a 'Green Shield' icon on the Dashboard."
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend exposes `isMainnet`, `liveSourceEnabled`, `timerRunning`, and `systemReady` in a single status response.",
-        "Dashboard shows a green shield icon only when all three conditions are true.",
-        "Dashboard provides an English tooltip or label that explains which condition(s) are missing when not ready."
-      ]
-    },
-    {
       "id": "REQ-7",
-      "text": "Backend + Frontend: Add timer start failure handling. If the 10-second timer fails to start (including any trap/error condition during the start attempt), return a failure result from the relevant backend call(s) and surface a persistent \"Canister Timeout\" warning in a Notification Center UI in the frontend (not only as a transient toast).",
-      "target": "both",
+      "text": "Confirm the Version 11.1 triangular shadow simulation uses a fixed notional input amount of exactly 100 ICP as the starting asset for every run of the ICP → ckBTC → BOB → ICP path.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "Error Handling: If the 10s Timer fails to start, surface a 'Canister Timeout' warning in the Notification Center."
+          "仍然是 100 ICP"
         ]
       },
       "acceptanceCriteria": [
-        "Backend start flow detects and reports timer start failure without silently succeeding.",
-        "Frontend renders a Notification Center area that lists active warnings.",
-        "When timer start fails, a persistent warning labeled exactly \"Canister Timeout\" appears in the Notification Center until cleared or the condition is resolved."
+        "The backend triangular shadow simulation entry point uses 100 ICP as the default/fixed input amount (not configurable unless explicitly added later).",
+        "A backend query/method (or the logged result payload) clearly indicates the run used 100 ICP as the input notional."
       ]
     },
     {
       "id": "REQ-8",
-      "text": "Frontend: Update tick synchronization behavior to align UI refresh cadence with the backend 10-second timer by polling the backend `last_update_id` on a 10-second interval and using it as the source of truth for when to refresh tick-dependent widgets (including the 1-minute volatility chart) so the dashboard reflects the exact backend tick state.",
-      "target": "frontend",
+      "text": "Implement Version 11.1 core triangular shadow arbitrage simulation in the single Motoko actor, using the strict ICPSwap pool route and pool IDs: xmiu5 (ICP/ckBTC) → 73nps (ckBTC/BOB) → sys7q (BOB/ICP). Use constant-product swap math (x*y=k) and apply a 0.3% fee per leg when computing expected outputs.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "Execute Version 10 Final Build with high-fidelity logic:"
+          "Path Mapping: Define legs using pool IDs: xmiu5 (ICP/ckBTC), 73nps (ckBTC/BOB), sys7q (BOB/ICP).",
+          "Shadow Logic: Calculate expected output for 100 ICP using the $(x \\times y = k)$ formula, subtracting 0.3% fee per leg."
         ]
       },
       "acceptanceCriteria": [
-        "Frontend polls `last_update_id` every 10 seconds.",
-        "Tick-dependent UI refreshes are keyed off changes to `last_update_id` (no extra intermediate refreshes that imply ticks that did not occur).",
-        "The 1-minute volatility chart updates once per backend tick when live sampling is active."
+        "A backend method exists to run the triangular shadow simulation and returns the per-leg outputs and the final virtual ICP output.",
+        "The simulation applies 0.3% fee per leg in the output calculation for each swap leg.",
+        "The simulation uses the exact pool IDs xmiu5, 73nps, sys7q for the forward path."
       ]
     },
     {
       "id": "REQ-9",
-      "text": "Finalize Version 10 for release: ensure candid/type definitions and React Query hooks are updated to match any backend API signature changes introduced by Version 10 (status APIs, last_update_id, start results), and ensure the app builds cleanly and is ready to deploy as \"Version 10\".",
-      "target": "both",
+      "text": "Define and enforce Version 11.1 leg failure conditions in shadow mode: treat a leg as failed if either (a) pool data fetch fails for that leg, or (b) computed slippage for that leg exceeds 0.5%. When a failure happens at any leg, stop the forward path immediately and trigger Short-circuit Recovery.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-1"
         ],
         "quotes": [
-          "Finalize and Deploy Version 10."
+          "Execution Logic: Simulate a 3-step swap. Trigger Short-circuit Recovery if slippage exceeds 0.5% or pool data fetch fails.",
+          "Safety Parameters: Enforce a 0.5% max slippage."
         ]
       },
       "acceptanceCriteria": [
-        "Frontend compiles with no TypeScript errors after backend API changes.",
-        "Backend compiles with no Motoko errors and candid matches frontend bindings.",
-        "All new Version 10 behaviors (Smart ID increment, Smart Start logic, System Ready guard, Canister Timeout notification, 10s tick sync) are verifiable via the UI."
+        "If pool data cannot be fetched for any required pool during the run, the simulation terminates the forward path and enters recovery.",
+        "If computed slippage for any leg is > 0.5%, the simulation terminates the forward path and enters recovery.",
+        "The returned result indicates which leg failed and why (fetch failure vs slippage breach), even though only net P/L is persisted to the Lab log."
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "text": "Implement the Version 11.1 Short-circuit Recovery simulator: when a forward leg fails, simulate swapping remaining virtual assets back to ICP using the most liquid direct pool chosen by 1-minute moving average TVL. Use xmiu5 as the ckBTC/ICP fallback pool and ybilh as the BOB/ICP fallback pool. Liquidity selection must be based on the 1-minute moving average TVL computed from existing ring-buffer snapshots (do not introduce a new TVL buffer if ring-buffer data already exists).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Recovery Path: Use pool ybilh for BOB/ICP fallback and xmiu5 for ckBTC/ICP fallback based on 1-minute MA TVL.",
+          "Resource Management: Calculate 1-minute MA TVL directly from existing ring-buffer snapshots."
+        ]
+      },
+      "acceptanceCriteria": [
+        "On any forward-path failure, the backend produces a recovered final virtual ICP balance by simulating a direct swap via either xmiu5 or ybilh (depending on which remaining asset must be converted back to ICP).",
+        "The recovery logic chooses between the two direct pools based on a 1-minute moving average TVL derived from existing stored ring-buffer snapshot data.",
+        "The recovery simulation uses the exact fallback pool IDs: xmiu5 for ckBTC/ICP and ybilh for BOB/ICP."
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "text": "Minimal Evolutionary Lab logging for Version 11.1: persist only the final net virtual profit/loss (net shadow return) from each triangular shadow run to the existing Evolutionary Lab logging surface in the backend. Do not add per-leg status UI or the Path Visualizer in this version.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Shadow Result: Log only the virtual profit/loss to Evolutionary Lab.",
+          "Skip UI Path Visualizer for now."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Each triangular shadow run appends exactly one persisted record representing the final net virtual P/L (profit/loss) for the run.",
+        "No additional per-leg logs are persisted as part of the Evolutionary Lab dataset for this feature.",
+        "No frontend/UI requirements are introduced for a path visualizer in this build request."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single-actor Motoko canister with all logic in backend/main.mo; add backend/migration.mo only if existing stable state requires migration.",
-    "Do not edit any files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
-    "Use English for all user-facing text."
+    "Backend must remain a single Motoko actor with all logic implemented in backend/main.mo (no additional backend services).",
+    "Use English for any user-facing text exposed via APIs that the frontend might render (e.g., reason strings, status labels).",
+    "Compute 1-minute moving average TVL from existing ring-buffer snapshot data; do not introduce a new dedicated TVL buffer if existing snapshots already provide the required history."
   ],
   "nonGoals": [
-    "Implementing real trade execution (non-dry-run) is out of scope.",
-    "Adding third-party authentication providers beyond Internet Identity is out of scope.",
-    "Adding external databases or off-canister storage is out of scope."
+    "Do not implement real on-chain swaps (this is shadow/simulation only).",
+    "Do not build the Execution-tab Path Visualizer UI in Version 11.1.",
+    "Do not add third-party integrations or external databases."
   ],
   "imageRequirements": {
     "required": [],

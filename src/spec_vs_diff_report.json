@@ -1,105 +1,54 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T12:26:37.871Z",
-  "summary": "Diff adds a frontend Notification Center and a System Ready indicator UI, plus a stub backend migration module and some layout/dashboard wiring. However, the diff summary does not provide clear evidence that the backend APIs and smart-tick/timer logic required for Version 10 (last_update_id persistence/query, environment-aware startAgent behavior, unified status API, and timer-start failure reporting) are fully implemented, nor that frontend polling is exactly aligned to 10s via last_update_id changes.",
+  "generatedAt": "2026-02-04T13:38:39.683Z",
+  "summary": "The provided diff summary shows only generic backend types/utilities (including a ring buffer) and a project_state.json description update. There is no visible implementation evidence for the Version 11.1 triangular shadow arbitrage simulation, its fixed 100 ICP notional, failure conditions, short-circuit recovery using 1-minute MA TVL, or minimal Evolutionary Lab logging changes. Because backend/main.mo is truncated, this assessment is conservative and based only on the shown excerpts.",
   "missing_requirements": [
     {
-      "id": "REQ-4",
-      "requirement": "Backend must persist `last_update_id`, increment it only on successful validated live sample writes to the ring buffer, and expose a query API returning `last_update_id`.",
-      "reason": "The diff shows frontend code calling `useGetLastUpdateId`, but the backend changes are truncated and no backend query method for `last_update_id` (or persistence/increment conditions) is visible in the provided backend diff excerpt.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-        "frontend/src/hooks/useQueries.ts (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Backend `startAgent` must implement environment-aware Smart Start logic (Mainnet forces live source ON + start 10s timer + immediate fetch; Dev respects toggle but ensures timer running, and immediate fetch only if live ON).",
-      "reason": "There is user-facing text describing Smart Start, but the backend implementation of `startAgent` and environment checks/timer behavior are not shown in the truncated backend diff.",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/pages/AgentPage.tsx"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "requirement": "Backend must expose `isMainnet`, `liveSourceEnabled`, `timerRunning`, and computed `systemReady` in a single status API; frontend must show green shield only when all true with English tooltip explaining missing conditions.",
-      "reason": "Frontend indicator component exists and includes an English tooltip describing missing conditions, but the backend status API is not evidenced in the truncated backend diff (only local TS types are shown).",
-      "evidence": [
-        "frontend/src/components/SystemReadyIndicator.tsx",
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
       "id": "REQ-7",
-      "requirement": "Detect/report 10-second timer start failure from backend calls and surface a persistent frontend Notification Center warning labeled exactly \"Canister Timeout\".",
-      "reason": "Notification Center UI/state is added, but the diff summary does not show the backend returning a failure result on timer-start trap/error. Also, the exact warning label \"Canister Timeout\" is not present in the shown Notification Center code (it renders whatever `warning.message` is set elsewhere).",
+      "requirement": "Triangular shadow simulation uses a fixed notional input of exactly 100 ICP and indicates that in the method/result payload.",
+      "reason": "No visible code in the diff excerpt shows a triangular simulation entry point or a constant 100 ICP notional, nor any returned/logged payload field indicating 100 ICP was used.",
       "evidence": [
-        "frontend/src/components/NotificationCenter.tsx",
-        "frontend/src/lib/notificationCenter.ts",
-        "frontend/src/hooks/useQueries.ts (truncated)",
-        "backend/main.mo (truncated)"
+        "backend/main.mo (truncated excerpt shows types/ring buffer helpers only; no triangular simulation entry point)"
       ]
     },
     {
       "id": "REQ-8",
-      "requirement": "Frontend must poll backend `last_update_id` every 10 seconds and refresh tick-dependent widgets only on `last_update_id` changes (including 1-minute volatility chart).",
-      "reason": "One widget gates sample collection on `lastUpdateId` changes, but the diff does not show a 10-second polling interval for `last_update_id`, nor any updates to the 1-minute volatility chart behavior. The hooks file is truncated and the volatility chart is not shown.",
+      "requirement": "Implement core triangular shadow arbitrage simulation for route xmiu5 (ICP/ckBTC) → 73nps (ckBTC/BOB) → sys7q (BOB/ICP) using constant-product math and 0.3% fee per leg; return per-leg outputs and final ICP output.",
+      "reason": "No visible implementation of ICPSwap pool fetching, constant-product swap math, per-leg 0.3% fee application, or any method returning per-leg outputs/final output is shown in the diff excerpt.",
       "evidence": [
-        "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-        "frontend/src/hooks/useQueries.ts (truncated)"
+        "backend/main.mo (no visible functions referencing pool IDs xmiu5/73nps/sys7q or swap math/fees in excerpt)"
       ]
     },
     {
       "id": "REQ-9",
-      "requirement": "Finalize Version 10: candid/type definitions and React Query hooks updated to match backend API signature changes, and app builds cleanly.",
-      "reason": "The hooks file explicitly states it is using local type definitions \"until backend implements and generates these\", which is not aligned with the requirement to update candid/bindings to match backend changes for release readiness.",
+      "requirement": "Define/enforce leg failure conditions: fail on pool fetch failure or slippage > 0.5%; stop forward path and trigger recovery; return which leg failed and why (fetch vs slippage).",
+      "reason": "No visible code indicates slippage computation, 0.5% threshold checks, pool-fetch error handling that short-circuits, or result fields identifying failing leg/reason.",
       "evidence": [
-        "frontend/src/hooks/useQueries.ts (truncated)"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Added backend/migration.mo stub module and wired migration import, despite the request limiting adding migration.mo only if stable-state migration is required.",
-      "reason": "BuildRequest constrains adding backend/migration.mo to cases where existing stable state requires migration; the diff adds a no-op migration module with no demonstrated need in the provided summary.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (truncated)"
+        "backend/main.mo (excerpt contains type definitions and ring buffer utilities only)"
       ]
     },
     {
-      "description": "Notification center defines additional warning ID `TIMER_START_FAILED` beyond the explicitly required persistent \"Canister Timeout\" warning.",
-      "reason": "REQ-7 specifies surfacing a persistent warning labeled exactly \"Canister Timeout\"; introducing extra warning IDs is not requested and may complicate the required exact-label behavior.",
+      "id": "REQ-10",
+      "requirement": "Short-circuit recovery: on forward failure, simulate converting remaining asset back to ICP via most liquid direct pool chosen by 1-minute moving average TVL from existing ring-buffer snapshots; use fallback pool IDs xmiu5 (ckBTC/ICP) and ybilh (BOB/ICP).",
+      "reason": "While a ring buffer type/utilities are shown, there is no visible logic computing a 1-minute moving average TVL from existing snapshots, no liquidity selection between fallback pools, and no recovery swap simulation using xmiu5/ybilh.",
       "evidence": [
-        "frontend/src/lib/notificationCenter.ts"
+        "backend/main.mo (excerpt shows CustomRingBuffer/PricePoint utilities but no TVL MA computation or recovery selection logic)"
       ]
     },
     {
-      "description": "AppLayout footer includes \"Built with ❤️\" and an external caffeine.ai link.",
-      "reason": "Not requested by any Version 10 requirements; also introduces a heart symbol in user-facing UI text that is unrelated to the specified changes.",
+      "id": "REQ-11",
+      "requirement": "Minimal Evolutionary Lab logging: persist exactly one record per triangular run containing only final net virtual P/L; no per-leg persistence/UI additions.",
+      "reason": "The excerpt shows a type `EvoLabRun` (timestamp, profit) but no visible code that appends exactly one record per triangular run, nor evidence that per-leg logs are avoided for this feature.",
       "evidence": [
-        "frontend/src/components/AppLayout.tsx"
+        "backend/main.mo (shows type EvoLabRun but no persistence/append logic in excerpt)"
       ]
     }
   ],
-  "confidence": 0.62,
+  "hallucinated_features": [],
+  "confidence": 0.74,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/components/AppLayout.tsx",
-    "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-    "frontend/src/components/NotificationCenter.tsx",
-    "frontend/src/components/SystemReadyIndicator.tsx",
-    "frontend/src/hooks/useNotificationCenter.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/notificationCenter.ts",
-    "frontend/src/pages/AgentPage.tsx",
-    "frontend/src/pages/MarketWatchPage.tsx",
     "project_state.json"
   ]
 }

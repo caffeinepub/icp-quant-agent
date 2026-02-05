@@ -11,8 +11,6 @@ import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Outcall "http-outcalls/outcall";
 import Timer "mo:core/Timer";
-import Migration "migration";
-(with migration = Migration.run)
 
 actor {
   type DEXConfig = {
@@ -136,6 +134,11 @@ actor {
 
   var nextShadowTradeId = 0;
 
+  type EvoLabRun = {
+    timestamp : Time.Time;
+    profit : Float;
+  };
+
   func createRingBuffer(maxSize : Nat) : CustomRingBuffer {
     {
       buffer = Array.tabulate<?PricePoint>(maxSize, func(_) { null });
@@ -201,6 +204,7 @@ actor {
   let latencyLog = List.empty<LatencyMetric>();
   let signalDetectionEvents = List.empty<SignalDetectionEvent>();
   let shadowTrades = List.empty<ShadowTrade>();
+  let evolutionaryLabRunHistory = List.empty<EvoLabRun>();
 
   var priceBuffer = createRingBuffer(20);
 
@@ -667,5 +671,18 @@ actor {
       realizedReturn = null;
       resolutionReason = null;
     };
+  };
+
+  // Version 11.1 Final Evolutionary Lab Logging
+  public shared ({ caller }) func recordEvolutionaryLabRun(profit : Float) : async () {
+    let run : EvoLabRun = {
+      timestamp = Time.now();
+      profit;
+    };
+    evolutionaryLabRunHistory.add(run);
+  };
+
+  public query ({ caller }) func getEvolutionaryLabRunHistory() : async [EvoLabRun] {
+    evolutionaryLabRunHistory.toArray();
   };
 };

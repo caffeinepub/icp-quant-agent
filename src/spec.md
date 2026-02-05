@@ -1,14 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Finalize Version 10 by making backend tick tracking and agent startup environment-aware, exposing a clear “System Ready” status to the dashboard, adding persistent timer-start failure notifications, and synchronizing frontend refreshes to backend tick state.
+**Goal:** Implement Version 11.1 backend-only triangular shadow arbitrage simulation for the fixed ICP → ckBTC → BOB → ICP route using ICPSwap pool IDs, with failure handling, recovery, and minimal lab logging.
 
 **Planned changes:**
-- Backend: Add persistent `last_update_id` that increments only when a valid live price sample is fetched and written to the ring buffer; expose an API to query `last_update_id`.
-- Backend: Implement environment-aware `startAgent` behavior (Mainnet forces live source ON + starts 10s timer + immediate fetch; Dev respects live-source toggle but ensures 10s timer is running and fetches immediately only if live source is ON).
-- Backend + Frontend: Add a status API exposing `isMainnet`, `liveSourceEnabled`, `timerRunning`, and computed `systemReady`; show “System Ready” on the dashboard as a green shield when true and a clearly not-ready state with English explanation when false.
-- Backend + Frontend: Detect/report 10-second timer start failures and surface a persistent “Canister Timeout” warning in a Notification Center UI (not only a toast).
-- Frontend: Poll backend `last_update_id` every 10 seconds and refresh tick-dependent widgets (including the 1-minute volatility chart) only when `last_update_id` changes.
-- Both: Update candid/types and React Query hooks to match Version 10 API changes and ensure clean builds for release.
+- Add a backend triangular shadow simulation entry point that always starts with a fixed input notional of exactly 100 ICP and clearly reports that notional in its returned/logged result payload.
+- Implement constant-product (x*y=k) swap simulation with a 0.3% fee applied on each of the three legs using the strict pool route: xmiu5 (ICP/ckBTC) → 73nps (ckBTC/BOB) → sys7q (BOB/ICP).
+- Enforce leg failure conditions in shadow mode: stop the forward path if pool data fetch fails for any leg or if computed slippage for any leg exceeds 0.5%, and return which leg failed and why (fetch failure vs slippage breach).
+- Implement Short-circuit Recovery simulation on failure: convert remaining virtual assets back to ICP via the most liquid direct fallback pool selected by 1-minute moving average TVL computed from existing ring-buffer snapshots, using xmiu5 for ckBTC/ICP and ybilh for BOB/ICP.
+- Persist only one Evolutionary Lab record per run containing the final net virtual profit/loss (net shadow return), with no per-leg persistence and no UI/path visualizer additions.
 
-**User-visible outcome:** The dashboard shows whether the system is ready (green shield only when on Mainnet, live source enabled, and timer running), displays a persistent “Canister Timeout” warning if the timer cannot start, and updates tick-driven charts/widgets exactly once per backend tick based on `last_update_id`.
+**User-visible outcome:** The backend can run a Version 11.1 triangular shadow simulation starting from 100 ICP, returning per-leg outputs and final virtual ICP (or recovery result on failure), while logging only the final net virtual P/L to the Evolutionary Lab.

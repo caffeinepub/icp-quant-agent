@@ -55,6 +55,10 @@ export const DEXConfigIdentifiers = IDL.Record({
   'icpSwapCanisterId' : IDL.Opt(IDL.Text),
   'kongSwapCanisterId' : IDL.Opt(IDL.Text),
 });
+export const EvoLabRun = IDL.Record({
+  'timestamp' : Time,
+  'profit' : IDL.Float64,
+});
 export const ShadowTradeStatus = IDL.Variant({
   'active' : IDL.Null,
   'success' : IDL.Null,
@@ -140,6 +144,11 @@ export const idlService = IDL.Service({
   'getAllPoolPrices' : IDL.Func([], [IDL.Vec(PricePoint)], []),
   'getDecisionHistory' : IDL.Func([], [IDL.Vec(DecisionEvent)], ['query']),
   'getDexConfig' : IDL.Func([], [DEXConfigIdentifiers], ['query']),
+  'getEvolutionaryLabRunHistory' : IDL.Func(
+      [],
+      [IDL.Vec(EvoLabRun)],
+      ['query'],
+    ),
   'getPoolPrice' : IDL.Func([], [IDL.Opt(PricePoint)], []),
   'getSafeOptimizerDataset' : IDL.Func(
       [],
@@ -152,6 +161,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getSortedDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], ['query']),
+  'recordEvolutionaryLabRun' : IDL.Func([IDL.Float64], [], []),
   'recordPriceSnapshot' : IDL.Func([PriceSnapshot], [], []),
   'runArbitrageAnalysis' : IDL.Func([IDL.Text], [ArbitrageSignal], []),
   'runArbitrageAnalysisBetweenDEXs' : IDL.Func(
@@ -219,6 +229,7 @@ export const idlFactory = ({ IDL }) => {
     'icpSwapCanisterId' : IDL.Opt(IDL.Text),
     'kongSwapCanisterId' : IDL.Opt(IDL.Text),
   });
+  const EvoLabRun = IDL.Record({ 'timestamp' : Time, 'profit' : IDL.Float64 });
   const ShadowTradeStatus = IDL.Variant({
     'active' : IDL.Null,
     'success' : IDL.Null,
@@ -301,6 +312,11 @@ export const idlFactory = ({ IDL }) => {
     'getAllPoolPrices' : IDL.Func([], [IDL.Vec(PricePoint)], []),
     'getDecisionHistory' : IDL.Func([], [IDL.Vec(DecisionEvent)], ['query']),
     'getDexConfig' : IDL.Func([], [DEXConfigIdentifiers], ['query']),
+    'getEvolutionaryLabRunHistory' : IDL.Func(
+        [],
+        [IDL.Vec(EvoLabRun)],
+        ['query'],
+      ),
     'getPoolPrice' : IDL.Func([], [IDL.Opt(PricePoint)], []),
     'getSafeOptimizerDataset' : IDL.Func(
         [],
@@ -313,6 +329,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getSortedDEXConfigs' : IDL.Func([], [IDL.Vec(DEXConfig)], ['query']),
+    'recordEvolutionaryLabRun' : IDL.Func([IDL.Float64], [], []),
     'recordPriceSnapshot' : IDL.Func([PriceSnapshot], [], []),
     'runArbitrageAnalysis' : IDL.Func([IDL.Text], [ArbitrageSignal], []),
     'runArbitrageAnalysisBetweenDEXs' : IDL.Func(

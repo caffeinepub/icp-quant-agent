@@ -99,6 +99,10 @@ export interface TransformationOutput {
     headers: Array<http_header>;
 }
 export type Time = bigint;
+export interface EvoLabRun {
+    timestamp: Time;
+    profit: number;
+}
 export interface DecisionEvent {
     result: string;
     step: string;
@@ -204,10 +208,12 @@ export interface backendInterface {
     getAllPoolPrices(): Promise<Array<PricePoint>>;
     getDecisionHistory(): Promise<Array<DecisionEvent>>;
     getDexConfig(): Promise<DEXConfigIdentifiers>;
+    getEvolutionaryLabRunHistory(): Promise<Array<EvoLabRun>>;
     getPoolPrice(): Promise<PricePoint | null>;
     getSafeOptimizerDataset(): Promise<Array<SignalDetectionEvent>>;
     getShadowExecutionMetrics(): Promise<ShadowExecutionMetrics>;
     getSortedDEXConfigs(): Promise<Array<DEXConfig>>;
+    recordEvolutionaryLabRun(profit: number): Promise<void>;
     recordPriceSnapshot(snapshot: PriceSnapshot): Promise<void>;
     runArbitrageAnalysis(pairId: string): Promise<ArbitrageSignal>;
     runArbitrageAnalysisBetweenDEXs(fromDEX: string, toDEX: string, pairId: string): Promise<ArbitrageSignal>;
@@ -390,6 +396,20 @@ export class Backend implements backendInterface {
             return from_candid_DEXConfigIdentifiers_n2(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getEvolutionaryLabRunHistory(): Promise<Array<EvoLabRun>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getEvolutionaryLabRunHistory();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getEvolutionaryLabRunHistory();
+            return result;
+        }
+    }
     async getPoolPrice(): Promise<PricePoint | null> {
         if (this.processError) {
             try {
@@ -443,6 +463,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getSortedDEXConfigs();
+            return result;
+        }
+    }
+    async recordEvolutionaryLabRun(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordEvolutionaryLabRun(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordEvolutionaryLabRun(arg0);
             return result;
         }
     }

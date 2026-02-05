@@ -1,120 +1,62 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T12:26:37.926Z",
+  "generatedAt": "2026-02-04T13:38:39.703Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 4,
+    "total": 5,
+    "implemented": 0,
     "items": [
       {
-        "id": "REQ-4",
-        "summary": "Backend: Add a persistent `last_update_id` tick counter for the live price sampling buffer, and increment `last_update_id` ONLY when a valid live price sample is successfully fetched and stored in the ring buffer (do not increment on timer ticks that fail, return invalid data, or do not result in a buffer write). Expose a query API to read `last_update_id` for frontend synchronization.",
+        "id": "REQ-10",
+        "summary": "Implement the Version 11.1 Short-circuit Recovery simulator: when a forward leg fails, simulate swapping remaining virtual assets back to ICP using the most liquid direct pool chosen by 1-minute moving average TVL. Use xmiu5 as the ckBTC/ICP fallback pool and ybilh as the BOB/ICP fallback pool. Liquidity selection must be based on the 1-minute moving average TVL computed from existing ring-buffer snapshots (do not introduce a new TVL buffer if ring-buffer data already exists).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-5",
-        "summary": "Backend: Implement Smart Start logic for `startAgent` based on environment. If Environment == Mainnet: `startAgent` must force Live Data Source = ON and start the 10-second timer (and trigger an immediate initial fetch). If Environment == Dev: `startAgent` must respect the current Live Data Source toggle state but still ensure the 10-second timer is running (and trigger an immediate initial fetch if the live source is ON).",
+        "id": "REQ-11",
+        "summary": "Minimal Evolutionary Lab logging for Version 11.1: persist only the final net virtual profit/loss (net shadow return) from each triangular shadow run to the existing Evolutionary Lab logging surface in the backend. Do not add per-leg status UI or the Path Visualizer in this version.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Backend + Frontend: Define Tri-State `System_Ready` as (is_Mainnet && is_Live_Source && is_Timer_Running). Expose these three booleans and the computed `systemReady` value in a backend status API that the frontend can poll. On the Dashboard (Market Watch page), display `System Ready` as a Green Shield icon when true (and a clearly \"not ready\" state when false). Use English for any user-facing labels/tooltips.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/SystemReadyIndicator.tsx",
-          "frontend/src/pages/MarketWatchPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/SystemReadyIndicator.tsx",
-          "frontend/src/pages/MarketWatchPage.tsx"
-        ]
       },
       {
         "id": "REQ-7",
-        "summary": "Backend + Frontend: Add timer start failure handling. If the 10-second timer fails to start (including any trap/error condition during the start attempt), return a failure result from the relevant backend call(s) and surface a persistent \"Canister Timeout\" warning in a Notification Center UI in the frontend (not only as a transient toast).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/notificationCenter.ts",
-          "frontend/src/hooks/useNotificationCenter.ts",
-          "frontend/src/components/NotificationCenter.tsx",
-          "frontend/src/components/AppLayout.tsx",
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/notificationCenter.ts",
-          "frontend/src/hooks/useNotificationCenter.ts",
-          "frontend/src/components/NotificationCenter.tsx",
-          "frontend/src/components/AppLayout.tsx",
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts"
-        ]
+        "summary": "Confirm the Version 11.1 triangular shadow simulation uses a fixed notional input amount of exactly 100 ICP as the starting asset for every run of the ICP → ckBTC → BOB → ICP path.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-8",
-        "summary": "Frontend: Update tick synchronization behavior to align UI refresh cadence with the backend 10-second timer by polling the backend `last_update_id` on a 10-second interval and using it as the source of truth for when to refresh tick-dependent widgets (including the 1-minute volatility chart) so the dashboard reflects the exact backend tick state.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ]
+        "summary": "Implement Version 11.1 core triangular shadow arbitrage simulation in the single Motoko actor, using the strict ICPSwap pool route and pool IDs: xmiu5 (ICP/ckBTC) → 73nps (ckBTC/BOB) → sys7q (BOB/ICP). Use constant-product swap math (x*y=k) and apply a 0.3% fee per leg when computing expected outputs.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
         "id": "REQ-9",
-        "summary": "Finalize Version 10 for release: ensure candid/type definitions and React Query hooks are updated to match any backend API signature changes introduced by Version 10 (status APIs, last_update_id, start results), and ensure the app builds cleanly and is ready to deploy as \"Version 10\".",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/MarketWatchPage.tsx",
-          "frontend/src/components/AppLayout.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/pages/MarketWatchPage.tsx",
-          "frontend/src/components/AppLayout.tsx"
-        ]
+        "summary": "Define and enforce Version 11.1 leg failure conditions in shadow mode: treat a leg as failed if either (a) pool data fetch fails for that leg, or (b) computed slippage for that leg exceeds 0.5%. When a failure happens at any leg, stop the forward path immediately and trigger Short-circuit Recovery.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
+    "caffeine.lock.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
-    "frontend/src/components/AppLayout.tsx",
-    "frontend/src/components/CkBtcIcpRatioWidget.tsx",
-    "frontend/src/components/NotificationCenter.tsx",
-    "frontend/src/components/SystemReadyIndicator.tsx",
-    "frontend/src/hooks/useNotificationCenter.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/notificationCenter.ts",
-    "frontend/src/pages/AgentPage.tsx",
-    "frontend/src/pages/MarketWatchPage.tsx",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
